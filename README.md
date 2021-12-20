@@ -1,5 +1,22 @@
-# ExpoFP Fplan
+# ExpoFP FplanView
 
+### Download
+
+https://github.com/expofp/expofp-android-sdk/raw/main/fplan.aar
+
+### Add to project
+
+Build -> Edit Libraries And Dependencies
+
+![1](https://user-images.githubusercontent.com/60826376/146797004-f32a33a7-15bd-4b89-ba18-714302d361fb.png)
+
+Add JAR/AAR Dependency:
+
+![2](https://user-images.githubusercontent.com/60826376/146797025-8802e787-4c2a-4de2-a6b5-17eccf3324a4.png)
+
+Specify fplan.aar file path:
+
+![3](https://user-images.githubusercontent.com/60826376/146797034-a36e1094-7eb3-449b-a27a-373bbeecf1ef.png)
 
 ### Usage
 
