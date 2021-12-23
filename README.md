@@ -2,11 +2,13 @@
 
 ![1024-1 — копия](https://user-images.githubusercontent.com/60826376/146822762-66188b40-54f4-49dd-9479-9166d8aec672.jpeg)
 
-### Download
+
+## Download
 
 https://github.com/expofp/expofp-android-sdk/raw/main/fplan.aar
 
-### Add to project
+
+## Add to project
 
 Build -> Edit Libraries And Dependencies
 
@@ -20,7 +22,8 @@ Specify fplan.aar file path:
 
 ![3](https://user-images.githubusercontent.com/60826376/146797034-a36e1094-7eb3-449b-a27a-373bbeecf1ef.png)
 
-### Usage
+
+## Usage
 
 Add Android permissions:
 
@@ -73,3 +76,106 @@ public class MainActivity extends AppCompatActivity {
     }
 }
 ```
+
+
+## Functions
+
+Select booth:
+
+```java
+fplanView.selectBooth("1306");
+```
+
+Buid route:
+
+```java
+fplanView.buidRoute("1306", "2206");
+```
+
+
+## Events
+
+
+### Handling the plan load event
+
+Callback:
+
+```java
+class FpCallback implements FpConfiguredCallback{
+
+    private FplanView _fplanView;
+
+    public FpCallback(FplanView fplanView){
+        _fplanView = fplanView;
+    }
+
+    @Override
+    public void onFpConfigured() {
+        //Some code
+    }
+}
+```
+
+Init:
+
+```java
+fplanView.init("https://developer.expofp.com/examples/autumnfair.html", null, new FpCallback(fplanView), null);
+```
+
+
+### Handling the booth selection event
+
+Callback:
+
+```java
+class BoothCallback implements BoothSelectedCallback {
+
+    private FplanView _fplanView;
+
+    public BoothCallback(FplanView fplanView){
+        _fplanView = fplanView;
+    }
+
+    @Override
+    public void onBoothSelected(String boothName) {
+        //Some code
+    }
+}
+```
+
+Init:
+
+```java
+fplanView.init("https://developer.expofp.com/examples/autumnfair.html", new BoothCallback(fplanView), null, null);
+```
+
+
+### Route creation event handling
+
+Callback:
+
+```java
+class RouteCallback implements RouteCreatedCallback {
+
+    private FplanView _fplanView;
+
+    public RouteCallback(FplanView fplanView){
+        _fplanView = fplanView;
+    }
+
+    @Override
+    public void onRouteCreated(Route route) {
+        //Some code
+    }
+}
+```
+
+Init:
+
+```java
+fplanView.init("https://developer.expofp.com/examples/autumnfair.html", null, null, new RouteCallback(fplanView));
+```
+
+
+
+
