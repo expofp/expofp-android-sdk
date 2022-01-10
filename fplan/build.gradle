@@ -1,6 +1,21 @@
 plugins {
     id 'com.android.library'
+    id 'kotlin-android'
+    id 'maven-publish'
 }
+
+// чтобы пользователь смог добавить нашу библиотеку
+// мы должны указать group id, artifact id и ее версию
+ext {
+    // group id
+    PUBLISH_GROUP_ID = 'com.expofp'
+    // текущая версия библиотеки
+    PUBLISH_VERSION = '1.0.0'
+    // artifact id библиотеки
+    PUBLISH_ARTIFACT_ID = 'fplan'
+}
+
+apply from: "${rootProject.projectDir}/scripts/publish-module.gradle"
 
 android {
     compileSdk 31
