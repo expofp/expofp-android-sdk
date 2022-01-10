@@ -4,11 +4,9 @@ apply plugin: 'signing'
 task androidSourcesJar(type: Jar) {
     archiveClassifier.set('sources')
     if (project.plugins.findPlugin("com.android.library")) {
-        // For Android libraries
         from android.sourceSets.main.java.srcDirs
         from android.sourceSets.main.kotlin.srcDirs
     } else {
-        // For pure Kotlin libraries, in case you have them
         from sourceSets.main.java.srcDirs
         from sourceSets.main.kotlin.srcDirs
     }
@@ -22,12 +20,10 @@ afterEvaluate {
     publishing {
         publications {
             release(MavenPublication) {
-                // мы позже добавимм эти константы в другом файле
                 groupId PUBLISH_GROUP_ID
                 artifactId PUBLISH_ARTIFACT_ID
                 version PUBLISH_VERSION
 
-                // Two artifacts, the `aar` (or `jar`) and the sources
                 if (project.plugins.findPlugin("com.android.library")) {
                     from components.release
                 } else {
@@ -39,21 +35,16 @@ afterEvaluate {
                 // Mostly self-explanatory metadata
                 pom {
                     name = PUBLISH_ARTIFACT_ID
-                    // описание нашей библиотеки
                     description = 'Library for displaying expo plans'
-                    // ссылка на сайт либы или на Github
                     url = 'https://github.com/expofp/expofp-android-sdk'
                     licenses {
                         license {
                             name = 'MIT License'
-                            // также вам нужно создать лицензию для своей либы
-                            // я скопировал ее из Open Source проекта
                             url = 'https://github.com/expofp/expofp-android-sdk/raw/main/LICENSE'
                         }
                     }
                     developers {
                         developer {
-                            // далее указывает id, имя и почту разработчика
                             id = 'expofp'
                             name = 'ExpoFP'
                             email = 'support@expofp.com'
@@ -62,7 +53,6 @@ afterEvaluate {
                     }
 
                     scm {
-                        // информация о библиотеки на Github'е
                         connection = 'scm:git@github.com:expofp/expofp-android-sdk.git'
                         developerConnection = 'scm:git@github.com:expofp/expofp-android-sdk.git'
                         url = 'https://github.com/expofp/expofp-android-sdk/tree/main'
