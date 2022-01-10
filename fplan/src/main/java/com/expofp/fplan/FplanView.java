@@ -61,25 +61,50 @@ class DirectionJSInterface {
     }
 }
 
+/**
+ * View for displaying expo plans
+ */
 public class FplanView extends FrameLayout {
 
     private WebView _webView;
 
+    /**
+     * Constructor
+     * @param context
+     */
     public FplanView(Context context) {
         super(context);
         initView(context);
     }
 
+    /**
+     * Constructor
+     * @param context
+     * @param attrs
+     */
     public FplanView(Context context, AttributeSet attrs) {
         super(context, attrs);
         initView(context);
     }
 
+    /**
+     * Constructor
+     * @param context
+     * @param attrs
+     * @param defStyleAttr
+     */
     public FplanView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         initView(context);
     }
 
+    /**
+     * Initializing a view
+     * @param url expo plan URL
+     * @param boothSelectedCallback Callback on booth selection
+     * @param fpConfiguredCallback Callback when the view has finished initializing
+     * @param routeCreatedCallback Callback when building a route
+     */
     public void init(String url, @Nullable BoothSelectedCallback boothSelectedCallback,
                      @Nullable FpConfiguredCallback fpConfiguredCallback,
                      @Nullable RouteCreatedCallback routeCreatedCallback) {
@@ -101,6 +126,10 @@ public class FplanView extends FrameLayout {
         });
     }
 
+    /**
+     * Select booth
+     * @param boothName Booth name or externalID
+     */
     public void selectBooth(String boothName) {
         _webView.post(() -> {
             String js = String.format("selectBooth('%s')", boothName);
@@ -108,10 +137,21 @@ public class FplanView extends FrameLayout {
         });
     }
 
+    /**
+     * Build a route from one booth to another
+     * @param from Start booth
+     * @param to End booth
+     */
     public void buidRoute(String from, String to){
         buidRoute(from, to, false);
     }
 
+    /**
+     * Build a route from one booth to another
+     * @param from Start booth
+     * @param to End booth
+     * @param exceptUnaccessible True - exclude routes that are inaccessible to people with disabilities, False - include all routes
+     */
     public void buidRoute(String from, String to, boolean exceptUnaccessible) {
         _webView.post(() -> {
             String js = String.format("selectRoute('%s', '%s', %b)", from, to, exceptUnaccessible);
