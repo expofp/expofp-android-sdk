@@ -103,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         FplanView fplanView = findViewById(R.id.fplanView);
-        fplanView.init("https://developer.expofp.com/examples/autumnfair.html", null, null, null);
+        fplanView.init("https://wayfinding.expofp.com", null, null, null);
     }
 }
 ```
@@ -150,7 +150,7 @@ class FpCallback implements FpConfiguredCallback{
 Init:
 
 ```java
-fplanView.init("https://developer.expofp.com/examples/autumnfair.html", null, new FpCallback(fplanView), null);
+fplanView.init("https://wayfinding.expofp.com", null, new FpCallback(fplanView), null);
 ```
 
 
@@ -177,7 +177,7 @@ class BoothCallback implements BoothSelectedCallback {
 Init:
 
 ```java
-fplanView.init("https://developer.expofp.com/examples/autumnfair.html", new BoothCallback(fplanView), null, null);
+fplanView.init("https://wayfinding.expofp.com", new BoothCallback(fplanView), null, null);
 ```
 
 
@@ -204,7 +204,7 @@ class RouteCallback implements RouteCreatedCallback {
 Init:
 
 ```java
-fplanView.init("https://developer.expofp.com/examples/autumnfair.html", null, null, new RouteCallback(fplanView));
+fplanView.init("https://wayfinding.expofp.com", null, null, new RouteCallback(fplanView));
 ```
 
 
