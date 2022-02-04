@@ -32,14 +32,14 @@ Add dependency to build.gradle file(in module):
 
 ```java
 dependencies {
-    implementation 'com.expofp:fplan:1.0.0'
+    implementation 'com.expofp:fplan:1.0.1'
     ... 
 }
 ```
 
 ### Manualy
 
-Download: https://github.com/expofp/expofp-android-sdk/raw/main/fplan.aar
+Download: https://s01.oss.sonatype.org/service/local/repositories/releases/content/com/expofp/fplan/1.0.1/fplan-1.0.1.aar
 
 Build -> Edit Libraries And Dependencies
 
@@ -117,10 +117,16 @@ Select booth:
 fplanView.selectBooth("1306");
 ```
 
-Buid route:
+Build route:
 
 ```java
-fplanView.buidRoute("1306", "2206");
+fplanView.buildRoute("1306", "2206");
+```
+
+Set current position(Blu Dot):
+
+```java
+fplanView.setCurrentPosition(2875, 1734);
 ```
 
 
@@ -206,7 +212,3 @@ Init:
 ```java
 fplanView.init("https://wayfinding.expofp.com", null, null, new RouteCallback(fplanView));
 ```
-
-
-
-
