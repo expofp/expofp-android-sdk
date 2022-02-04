@@ -1,18 +1,21 @@
 package com.expofp.fplan;
 
+import android.app.Activity;
 import android.content.Context;
+import android.net.ConnectivityManager;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.FrameLayout;
 
 import androidx.annotation.Nullable;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.time.Duration;
+import java.io.IOException;
+import java.io.InputStream;
 
 class BoothClickJSInterface {
     private BoothSelectedCallback _callback;
@@ -50,10 +53,7 @@ class DirectionJSInterface {
     @JavascriptInterface
     public void postMessage(String directionJson) throws JSONException {
         try {
-            JSONObject jObject = new JSONObject(directionJson);
-            Route route = new Route();
-            route.setDistance(jObject.getString("distance"));
-            route.setDuration(Duration.ofSeconds(jObject.getInt("time")));
+            Route route = Helper.parseRoute(directionJson);
             _callback.onRouteCreated(route);
         } catch (JSONException e) {
             throw e;
@@ -108,6 +108,21 @@ public class FplanView extends FrameLayout {
     public void init(String url, @Nullable BoothSelectedCallback boothSelectedCallback,
                      @Nullable FpConfiguredCallback fpConfiguredCallback,
                      @Nullable RouteCreatedCallback routeCreatedCallback) {
+        String eventId = url.substring(8, url.indexOf('.'));
+        init(url, eventId, boothSelectedCallback, fpConfiguredCallback, routeCreatedCallback);
+    }
+
+    /**
+     * Initializing a view
+     * @param url expo plan URL
+     * @param eventId event ID
+     * @param boothSelectedCallback Callback on booth selection
+     * @param fpConfiguredCallback Callback when the view has finished initializing
+     * @param routeCreatedCallback Callback when building a route
+     */
+    public void init(String url, String eventId, @Nullable BoothSelectedCallback boothSelectedCallback,
+                     @Nullable FpConfiguredCallback fpConfiguredCallback,
+                     @Nullable RouteCreatedCallback routeCreatedCallback) {
 
         _webView.post(() -> {
             if (boothSelectedCallback != null) {
@@ -122,7 +137,25 @@ public class FplanView extends FrameLayout {
                 _webView.addJavascriptInterface(new DirectionJSInterface(routeCreatedCallback), "onDirectionHandler");
             }
 
-            _webView.loadUrl(url);
+            String html = "";
+            try {
+                InputStream inputStream = this.getContext().getAssets().open("index.html");
+                byte[] buffer = new byte[inputStream.available()];
+                inputStream.read(buffer);
+                html = new String(buffer);
+                html = html.replace("$url#", url).replace("$eventId#", eventId);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            ConnectivityManager cm = (ConnectivityManager) this.getContext().getSystemService(Activity.CONNECTIVITY_SERVICE);
+            if(cm != null && cm.getActiveNetworkInfo() != null && cm.getActiveNetworkInfo().isConnected()){
+                _webView.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
+            }
+            else{
+                _webView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+            }
+            _webView.loadDataWithBaseURL(url, html, "text/html", "en_US", null);
         });
     }
 
@@ -138,23 +171,45 @@ public class FplanView extends FrameLayout {
     }
 
     /**
-     * Build a route from one booth to another
-     * @param from Start booth
-     * @param to End booth
+     * Set current position(Blu Dot) on route
+     * @param x X
+     * @param y Y
      */
-    public void buidRoute(String from, String to){
-        buidRoute(from, to, false);
+    public void setCurrentPosition(int x, int y) {
+        setCurrentPosition(x, y, false);
+    }
+
+    /**
+     * Set current position(Blu Dot) on route
+     * @param x X
+     * @param y Y
+     * @param focus True - focus on a point
+     */
+    public void setCurrentPosition(int x, int y, boolean focus) {
+        _webView.post(() -> {
+            String js = String.format("selectRoute(%d, %d, %b)", x, y, focus);
+            _webView.evaluateJavascript(js, null);
+        });
     }
 
     /**
      * Build a route from one booth to another
      * @param from Start booth
      * @param to End booth
-     * @param exceptUnaccessible True - exclude routes that are inaccessible to people with disabilities, False - include all routes
      */
-    public void buidRoute(String from, String to, boolean exceptUnaccessible) {
+    public void buildRoute(String from, String to){
+        buildRoute(from, to, false);
+    }
+
+    /**
+     * Build a route from one booth to another
+     * @param from Start booth
+     * @param to End booth
+     * @param exceptInaccessible True - exclude routes that are inaccessible to people with disabilities, False - include all routes
+     */
+    public void buildRoute(String from, String to, boolean exceptInaccessible) {
         _webView.post(() -> {
-            String js = String.format("selectRoute('%s', '%s', %b)", from, to, exceptUnaccessible);
+            String js = String.format("selectRoute('%s', '%s', %b)", from, to, exceptInaccessible);
             _webView.evaluateJavascript(js, null);
         });
     }

@@ -3,22 +3,37 @@ package com.expofp.fplan;
 import java.time.Duration;
 
 public class Route {
-    private String distance; //свойство
-    private Duration time; //свойство
+    private String distance;
+    private Duration time;
+    private RouteBooth from;
+    private RouteBooth to;
+    private RouteLine[] lines;
 
-    public String getDistance() { //геттер
+    public String getDistance() {
         return this.distance;
     }
 
-    public void setDistance(String distance) { //сеттер
-        this.distance = distance;
-    }
-
-    public Duration getDuration() { //геттер
+    public Duration getDuration() {
         return this.time;
     }
 
-    public void setDuration(Duration time) { //сеттер
+    public RouteBooth getBoothFrom() {
+        return this.from;
+    }
+
+    public RouteBooth getBoothTo() {
+        return this.to;
+    }
+
+    public RouteLine[] getLines() {
+        return this.lines;
+    }
+
+    public Route(RouteBooth from, RouteBooth to, String distance, Duration time, RouteLine[] lines){
+        this.from = from;
+        this.to = to;
+        this.distance = distance;
         this.time = time;
+        this.lines = lines;
     }
 }
