@@ -2,9 +2,11 @@
 
 Create your expo plan on the website https://expofp.com then use the URL of the created expo plan when you working with the library
 
-Version for iOS: https://github.com/expofp/expofp-ios-sdk
-
 ![1024-1 — копия](https://user-images.githubusercontent.com/60826376/146822762-66188b40-54f4-49dd-9479-9166d8aec672.jpeg)
+
+## Version for iOS
+
+https://github.com/expofp/expofp-ios-sdk
 
 ## Usage example
 
@@ -52,7 +54,6 @@ Add JAR/AAR Dependency:
 Specify fplan.aar file path:
 
 ![3](https://user-images.githubusercontent.com/60826376/146797034-a36e1094-7eb3-449b-a27a-373bbeecf1ef.png)
-
 
 ## Usage
 
@@ -108,7 +109,6 @@ public class MainActivity extends AppCompatActivity {
 }
 ```
 
-
 ## Functions
 
 Select booth:
@@ -123,15 +123,13 @@ Build route:
 fplanView.buildRoute("1306", "2206");
 ```
 
-Set current position(Blu Dot):
+Set current position(Blue-dot):
 
 ```java
 fplanView.setCurrentPosition(2875, 1734);
 ```
 
-
 ## Events
-
 
 ### Handling the plan load event
 
@@ -159,7 +157,6 @@ Init:
 fplanView.init("https://wayfinding.expofp.com", null, new FpCallback(fplanView), null);
 ```
 
-
 ### Handling the booth selection event
 
 Callback:
@@ -186,7 +183,6 @@ Init:
 fplanView.init("https://wayfinding.expofp.com", new BoothCallback(fplanView), null, null);
 ```
 
-
 ### Route creation event handling
 
 Callback:
@@ -211,4 +207,86 @@ Init:
 
 ```java
 fplanView.init("https://wayfinding.expofp.com", null, null, new RouteCallback(fplanView));
+```
+
+## Example
+
+```java
+package com.example.expofp;
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+
+import com.expofp.fplan.BoothSelectedCallback;
+import com.expofp.fplan.FpConfiguredCallback;
+import com.expofp.fplan.FplanView;
+import com.expofp.fplan.Route;
+import com.expofp.fplan.RouteCreatedCallback;
+
+
+class RouteCallback implements RouteCreatedCallback {
+
+    private FplanView _fplanView;
+
+    public RouteCallback(FplanView fplanView){
+        _fplanView = fplanView;
+    }
+
+    @Override
+    public void onRouteCreated(Route route) {
+        //Some code
+    }
+}
+
+class BoothCallback implements BoothSelectedCallback {
+
+    private FplanView _fplanView;
+
+    public BoothCallback(FplanView fplanView){
+        _fplanView = fplanView;
+    }
+
+    @Override
+    public void onBoothSelected(String boothName) {
+        //Some code
+    }
+}
+
+class FpCallback implements FpConfiguredCallback{
+
+    private FplanView _fplanView;
+
+    public FpCallback(FplanView fplanView){
+        _fplanView = fplanView;
+    }
+
+    @Override
+    public void onFpConfigured() {
+        //Some code
+    }
+}
+
+public class MainActivity extends AppCompatActivity {
+
+    private FplanView _fplanView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        _fplanView = findViewById(R.id.fplanView);
+        _fplanView.init("https://wayfinding.expofp.com", new BoothCallback(_fplanView), new FpCallback(_fplanView), new RouteCallback(_fplanView));
+
+    }
+
+    public void onSelectBoothClick(View view) {
+        _fplanView.selectBooth("1306");
+    }
+
+    public void onBuidDirectionClick(View view) {
+        _fplanView.buildRoute("1306", "2206", false);
+    }
+}
 ```
