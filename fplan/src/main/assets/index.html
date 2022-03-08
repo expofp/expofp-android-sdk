@@ -11,7 +11,7 @@
             window.floorplan = new ExpoFP.FloorPlan({
                 element: document.querySelector("#floorplan"),
                 eventId: "$eventId#",
-                noOverlay: true,
+                noOverlay: $noOverlay#,
                 onBoothClick: e => {
 		            window.onBoothClickHandler?.postMessage(e.target.name);
                 },

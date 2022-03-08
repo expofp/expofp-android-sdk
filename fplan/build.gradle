@@ -6,7 +6,7 @@ plugins {
 
 ext {
     PUBLISH_GROUP_ID = 'com.expofp'
-    PUBLISH_VERSION = '1.0.1'
+    PUBLISH_VERSION = '1.1.0'
     PUBLISH_ARTIFACT_ID = 'fplan'
 }
 
@@ -18,8 +18,6 @@ android {
     defaultConfig {
         minSdk 26
         targetSdk 31
-        versionCode 1
-        versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"

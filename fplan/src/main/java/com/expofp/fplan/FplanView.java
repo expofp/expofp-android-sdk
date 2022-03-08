@@ -17,50 +17,6 @@ import org.json.JSONException;
 import java.io.IOException;
 import java.io.InputStream;
 
-class BoothClickJSInterface {
-    private BoothSelectedCallback _callback;
-
-    public BoothClickJSInterface(BoothSelectedCallback callback) {
-        _callback = callback;
-    }
-
-    @JavascriptInterface
-    public void postMessage(String boothName) {
-        _callback.onBoothSelected(boothName);
-    }
-}
-
-class FpReadyJSInterface {
-    private FpConfiguredCallback _callback;
-
-    public FpReadyJSInterface(FpConfiguredCallback callback) {
-        _callback = callback;
-    }
-
-    @JavascriptInterface
-    public void postMessage(String message) {
-        _callback.onFpConfigured();
-    }
-}
-
-class DirectionJSInterface {
-    private RouteCreatedCallback _callback;
-
-    public DirectionJSInterface(RouteCreatedCallback callback) {
-        _callback = callback;
-    }
-
-    @JavascriptInterface
-    public void postMessage(String directionJson) throws JSONException {
-        try {
-            Route route = Helper.parseRoute(directionJson);
-            _callback.onRouteCreated(route);
-        } catch (JSONException e) {
-            throw e;
-        }
-    }
-}
-
 /**
  * View for displaying expo plans
  */
@@ -70,7 +26,8 @@ public class FplanView extends FrameLayout {
 
     /**
      * Constructor
-     * @param context
+     *
+     * @param context Context
      */
     public FplanView(Context context) {
         super(context);
@@ -79,8 +36,9 @@ public class FplanView extends FrameLayout {
 
     /**
      * Constructor
-     * @param context
-     * @param attrs
+     *
+     * @param context Context
+     * @param attrs   Attributes
      */
     public FplanView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -89,9 +47,10 @@ public class FplanView extends FrameLayout {
 
     /**
      * Constructor
-     * @param context
-     * @param attrs
-     * @param defStyleAttr
+     *
+     * @param context      Context
+     * @param attrs        Attributes
+     * @param defStyleAttr Style attribute
      */
     public FplanView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
@@ -100,59 +59,91 @@ public class FplanView extends FrameLayout {
 
     /**
      * Initializing a view
-     * @param url expo plan URL
-     * @param boothSelectedCallback Callback on booth selection
-     * @param fpConfiguredCallback Callback when the view has finished initializing
-     * @param routeCreatedCallback Callback when building a route
+     *
+     * @param url           Expo plan URL
+     * @param eventListener Events listener
      */
-    public void init(String url, @Nullable BoothSelectedCallback boothSelectedCallback,
-                     @Nullable FpConfiguredCallback fpConfiguredCallback,
-                     @Nullable RouteCreatedCallback routeCreatedCallback) {
+    public void init(String url, @Nullable FplanEventListener eventListener) {
         String eventId = url.substring(8, url.indexOf('.'));
-        init(url, eventId, boothSelectedCallback, fpConfiguredCallback, routeCreatedCallback);
+        init(url, eventId, eventListener);
     }
 
     /**
      * Initializing a view
-     * @param url expo plan URL
-     * @param eventId event ID
-     * @param boothSelectedCallback Callback on booth selection
-     * @param fpConfiguredCallback Callback when the view has finished initializing
-     * @param routeCreatedCallback Callback when building a route
+     *
+     * @param url           Expo plan URL
+     * @param noOverlay     True - Hides the panel with information about exhibitors
+     * @param eventListener Events listener
      */
-    public void init(String url, String eventId, @Nullable BoothSelectedCallback boothSelectedCallback,
-                     @Nullable FpConfiguredCallback fpConfiguredCallback,
-                     @Nullable RouteCreatedCallback routeCreatedCallback) {
+    public void init(String url, Boolean noOverlay, @Nullable FplanEventListener eventListener) {
+        String eventId = url.substring(8, url.indexOf('.'));
+        init(url, eventId, noOverlay, eventListener);
+    }
+
+    /**
+     * Initializing a view
+     *
+     * @param url           Expo plan URL
+     * @param eventId       Event ID
+     * @param eventListener Events listener
+     */
+    public void init(String url, String eventId, @Nullable FplanEventListener eventListener) {
+        init(url, eventId, true, eventListener);
+    }
+
+    /**
+     * Initializing a view
+     *
+     * @param url           Expo plan URL
+     * @param eventId       Event ID
+     * @param noOverlay     True - Hides the panel with information about exhibitors
+     * @param eventListener Events listener
+     */
+    public void init(String url, String eventId, Boolean noOverlay, @Nullable FplanEventListener eventListener) {
+        if (eventListener != null) {
+            _webView.addJavascriptInterface(new Object() {
+                @JavascriptInterface
+                public void postMessage(String message) {
+                    eventListener.onFpConfigured();
+                }
+            }, "onFpConfiguredHandler");
+
+            _webView.addJavascriptInterface(new Object() {
+                @JavascriptInterface
+                public void postMessage(String boothName) {
+                    eventListener.onBoothSelected(boothName);
+                }
+            }, "onBoothClickHandler");
+
+            _webView.addJavascriptInterface(new Object() {
+                @JavascriptInterface
+                public void postMessage(String directionJson) throws JSONException {
+                    try {
+                        Route route = Helper.parseRoute(directionJson);
+                        eventListener.onRouteCreated(route);
+                    } catch (JSONException e) {
+                        throw e;
+                    }
+                }
+            }, "onDirectionHandler");
+        }
 
         _webView.post(() -> {
-            if (boothSelectedCallback != null) {
-                _webView.addJavascriptInterface(new BoothClickJSInterface(boothSelectedCallback), "onBoothClickHandler");
-            }
-
-            if (fpConfiguredCallback != null) {
-                _webView.addJavascriptInterface(new FpReadyJSInterface(fpConfiguredCallback), "onFpConfiguredHandler");
-            }
-
-            if (routeCreatedCallback != null) {
-                _webView.addJavascriptInterface(new DirectionJSInterface(routeCreatedCallback), "onDirectionHandler");
-            }
-
             String html = "";
             try {
                 InputStream inputStream = this.getContext().getAssets().open("index.html");
                 byte[] buffer = new byte[inputStream.available()];
                 inputStream.read(buffer);
                 html = new String(buffer);
-                html = html.replace("$url#", url).replace("$eventId#", eventId);
+                html = html.replace("$url#", url).replace("$eventId#", eventId).replace("$noOverlay#", noOverlay.toString());
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
             ConnectivityManager cm = (ConnectivityManager) this.getContext().getSystemService(Activity.CONNECTIVITY_SERVICE);
-            if(cm != null && cm.getActiveNetworkInfo() != null && cm.getActiveNetworkInfo().isConnected()){
+            if (cm != null && cm.getActiveNetworkInfo() != null && cm.getActiveNetworkInfo().isConnected()) {
                 _webView.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
-            }
-            else{
+            } else {
                 _webView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
             }
             _webView.loadDataWithBaseURL(url, html, "text/html", "en_US", null);
@@ -161,6 +152,7 @@ public class FplanView extends FrameLayout {
 
     /**
      * Select booth
+     *
      * @param boothName Booth name or externalID
      */
     public void selectBooth(String boothName) {
@@ -171,7 +163,8 @@ public class FplanView extends FrameLayout {
     }
 
     /**
-     * Set current position(Blu Dot) on route
+     * Set current position(Blue-Dot) on route
+     *
      * @param x X
      * @param y Y
      */
@@ -180,36 +173,52 @@ public class FplanView extends FrameLayout {
     }
 
     /**
-     * Set current position(Blu Dot) on route
-     * @param x X
-     * @param y Y
+     * Set current position(Blue-Dot) on route
+     *
+     * @param x     X
+     * @param y     Y
      * @param focus True - focus on a point
      */
     public void setCurrentPosition(int x, int y, boolean focus) {
         _webView.post(() -> {
-            String js = String.format("selectRoute(%d, %d, %b)", x, y, focus);
+            String js = String.format("setCurrentPosition(%d, %d, %b)", x, y, focus);
             _webView.evaluateJavascript(js, null);
         });
     }
 
     /**
      * Build a route from one booth to another
+     *
      * @param from Start booth
-     * @param to End booth
+     * @param to   End booth
      */
-    public void buildRoute(String from, String to){
+    public void buildRoute(String from, String to) {
         buildRoute(from, to, false);
     }
 
     /**
      * Build a route from one booth to another
-     * @param from Start booth
-     * @param to End booth
+     *
+     * @param from               Start booth
+     * @param to                 End booth
      * @param exceptInaccessible True - exclude routes that are inaccessible to people with disabilities, False - include all routes
      */
     public void buildRoute(String from, String to, boolean exceptInaccessible) {
         _webView.post(() -> {
             String js = String.format("selectRoute('%s', '%s', %b)", from, to, exceptInaccessible);
+            _webView.evaluateJavascript(js, null);
+        });
+    }
+
+    /**
+     * Clear floor plan
+     */
+    public void clear() {
+        _webView.post(() -> {
+            String js = String.format("selectRoute(null, null, false)");
+            _webView.evaluateJavascript(js, null);
+
+            js = String.format("setCurrentPosition(null, null, false)");
             _webView.evaluateJavascript(js, null);
         });
     }
@@ -225,8 +234,8 @@ public class FplanView extends FrameLayout {
 
         _webView.getSettings().setJavaScriptEnabled(true);
         _webView.getSettings().setDomStorageEnabled(true);
-        _webView.getSettings().setAllowFileAccess( true );
-        _webView.getSettings().setAppCacheEnabled( true );
+        _webView.getSettings().setAllowFileAccess(true);
+        _webView.getSettings().setAppCacheEnabled(true);
 
         this.addView(_webView);
     }
