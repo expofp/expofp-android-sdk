@@ -14,8 +14,6 @@ https://github.com/expofp/expofp-java-example
 
 ## Add to project
 
-### Using Maven
-
 Add Maven repository reference to build.gradle file(in root of your project):
 
 ```java
@@ -34,26 +32,10 @@ Add dependency to build.gradle file(in module):
 
 ```java
 dependencies {
-    implementation 'com.expofp:fplan:1.0.1'
+    implementation 'com.expofp:fplan:1.1.0'
     ... 
 }
 ```
-
-### Manualy
-
-Download: https://s01.oss.sonatype.org/service/local/repositories/releases/content/com/expofp/fplan/1.0.1/fplan-1.0.1.aar
-
-Build -> Edit Libraries And Dependencies
-
-![1](https://user-images.githubusercontent.com/60826376/146797004-f32a33a7-15bd-4b89-ba18-714302d361fb.png)
-
-Add JAR/AAR Dependency:
-
-![2](https://user-images.githubusercontent.com/60826376/146797025-8802e787-4c2a-4de2-a6b5-17eccf3324a4.png)
-
-Specify fplan.aar file path:
-
-![3](https://user-images.githubusercontent.com/60826376/146797034-a36e1094-7eb3-449b-a27a-373bbeecf1ef.png)
 
 ## Usage
 
@@ -96,15 +78,51 @@ Add FplanView to layout:
 Init FplanView:
 
 ```java
+package com.example.expofp;
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+
+import com.expofp.fplan.FplanEventListener;
+import com.expofp.fplan.FplanView;
+import com.expofp.fplan.Route;
+
+
 public class MainActivity extends AppCompatActivity {
+
+    private FplanView _fplanView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        FplanView fplanView = findViewById(R.id.fplanView);
-        fplanView.init("https://wayfinding.expofp.com", null, null, null);
+        _fplanView = findViewById(R.id.fplanView);
+        _fplanView.init("https://wayfinding.expofp.com", new FplanEventListener() {
+            @Override
+            public void onFpConfigured() {
+
+            }
+
+            @Override
+            public void onBoothSelected(String boothName) {
+
+            }
+
+            @Override
+            public void onRouteCreated(Route route) {
+
+            }
+        });
+    }
+
+    public void onSelectBoothClick(View view) {
+        _fplanView.selectBooth("1306");
+    }
+
+    public void onBuidDirectionClick(View view) {
+        _fplanView.buildRoute("1306", "2206", false);
     }
 }
 ```
@@ -129,164 +147,8 @@ Set current position(Blue-dot):
 fplanView.setCurrentPosition(2875, 1734);
 ```
 
-## Events
-
-### Handling the plan load event
-
-Callback:
+Clear floor plan:
 
 ```java
-class FpCallback implements FpConfiguredCallback{
-
-    private FplanView _fplanView;
-
-    public FpCallback(FplanView fplanView){
-        _fplanView = fplanView;
-    }
-
-    @Override
-    public void onFpConfigured() {
-        //Some code
-    }
-}
-```
-
-Init:
-
-```java
-fplanView.init("https://wayfinding.expofp.com", null, new FpCallback(fplanView), null);
-```
-
-### Handling the booth selection event
-
-Callback:
-
-```java
-class BoothCallback implements BoothSelectedCallback {
-
-    private FplanView _fplanView;
-
-    public BoothCallback(FplanView fplanView){
-        _fplanView = fplanView;
-    }
-
-    @Override
-    public void onBoothSelected(String boothName) {
-        //Some code
-    }
-}
-```
-
-Init:
-
-```java
-fplanView.init("https://wayfinding.expofp.com", new BoothCallback(fplanView), null, null);
-```
-
-### Route creation event handling
-
-Callback:
-
-```java
-class RouteCallback implements RouteCreatedCallback {
-
-    private FplanView _fplanView;
-
-    public RouteCallback(FplanView fplanView){
-        _fplanView = fplanView;
-    }
-
-    @Override
-    public void onRouteCreated(Route route) {
-        //Some code
-    }
-}
-```
-
-Init:
-
-```java
-fplanView.init("https://wayfinding.expofp.com", null, null, new RouteCallback(fplanView));
-```
-
-## Example
-
-```java
-package com.example.expofp;
-
-import androidx.appcompat.app.AppCompatActivity;
-import android.os.Bundle;
-import android.view.View;
-
-import com.expofp.fplan.BoothSelectedCallback;
-import com.expofp.fplan.FpConfiguredCallback;
-import com.expofp.fplan.FplanView;
-import com.expofp.fplan.Route;
-import com.expofp.fplan.RouteCreatedCallback;
-
-
-class RouteCallback implements RouteCreatedCallback {
-
-    private FplanView _fplanView;
-
-    public RouteCallback(FplanView fplanView){
-        _fplanView = fplanView;
-    }
-
-    @Override
-    public void onRouteCreated(Route route) {
-        //Some code
-    }
-}
-
-class BoothCallback implements BoothSelectedCallback {
-
-    private FplanView _fplanView;
-
-    public BoothCallback(FplanView fplanView){
-        _fplanView = fplanView;
-    }
-
-    @Override
-    public void onBoothSelected(String boothName) {
-        //Some code
-    }
-}
-
-class FpCallback implements FpConfiguredCallback{
-
-    private FplanView _fplanView;
-
-    public FpCallback(FplanView fplanView){
-        _fplanView = fplanView;
-    }
-
-    @Override
-    public void onFpConfigured() {
-        //Some code
-    }
-}
-
-public class MainActivity extends AppCompatActivity {
-
-    private FplanView _fplanView;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        _fplanView = findViewById(R.id.fplanView);
-        _fplanView.init("https://wayfinding.expofp.com", new BoothCallback(_fplanView), new FpCallback(_fplanView), new RouteCallback(_fplanView));
-
-    }
-
-    public void onSelectBoothClick(View view) {
-        _fplanView.selectBooth("1306");
-    }
-
-    public void onBuidDirectionClick(View view) {
-        _fplanView.buildRoute("1306", "2206", false);
-    }
-}
+fplanView.clear();
 ```
