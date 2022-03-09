@@ -23,6 +23,7 @@ import java.io.InputStream;
 public class FplanView extends FrameLayout {
 
     private WebView _webView;
+    private FplanEventListener _eventListener;
 
     /**
      * Constructor
@@ -100,33 +101,7 @@ public class FplanView extends FrameLayout {
      * @param eventListener Events listener
      */
     public void init(String url, String eventId, Boolean noOverlay, @Nullable FplanEventListener eventListener) {
-        if (eventListener != null) {
-            _webView.addJavascriptInterface(new Object() {
-                @JavascriptInterface
-                public void postMessage(String message) {
-                    eventListener.onFpConfigured();
-                }
-            }, "onFpConfiguredHandler");
-
-            _webView.addJavascriptInterface(new Object() {
-                @JavascriptInterface
-                public void postMessage(String boothName) {
-                    eventListener.onBoothSelected(boothName);
-                }
-            }, "onBoothClickHandler");
-
-            _webView.addJavascriptInterface(new Object() {
-                @JavascriptInterface
-                public void postMessage(String directionJson) throws JSONException {
-                    try {
-                        Route route = Helper.parseRoute(directionJson);
-                        eventListener.onRouteCreated(route);
-                    } catch (JSONException e) {
-                        throw e;
-                    }
-                }
-            }, "onDirectionHandler");
-        }
+        _eventListener = eventListener;
 
         _webView.post(() -> {
             String html = "";
@@ -236,6 +211,38 @@ public class FplanView extends FrameLayout {
         _webView.getSettings().setDomStorageEnabled(true);
         _webView.getSettings().setAllowFileAccess(true);
         _webView.getSettings().setAppCacheEnabled(true);
+
+        _webView.addJavascriptInterface(new Object() {
+            @JavascriptInterface
+            public void postMessage(String message) {
+                if (_eventListener != null) {
+                    _eventListener.onFpConfigured();
+                }
+            }
+        }, "onFpConfiguredHandler");
+
+        _webView.addJavascriptInterface(new Object() {
+            @JavascriptInterface
+            public void postMessage(String boothName) {
+                if (_eventListener != null) {
+                    _eventListener.onBoothSelected(boothName);
+                }
+            }
+        }, "onBoothClickHandler");
+
+        _webView.addJavascriptInterface(new Object() {
+            @JavascriptInterface
+            public void postMessage(String directionJson) throws JSONException {
+                if (_eventListener != null) {
+                    try {
+                        Route route = Helper.parseRoute(directionJson);
+                        _eventListener.onRouteCreated(route);
+                    } catch (JSONException e) {
+                        throw e;
+                    }
+                }
+            }
+        }, "onDirectionHandler");
 
         this.addView(_webView);
     }
