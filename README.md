@@ -14,25 +14,20 @@ https://github.com/expofp/expofp-java-example
 
 ## Add to project
 
-Add Maven repository reference to build.gradle file(in root of your project):
+Add Maven repository reference to settings.gradle file(in root of your project):
 
 ```java
-buildscript {
-    repositories {
+repositories {
         maven { url "https://s01.oss.sonatype.org/content/repositories/releases" }
         ...
     }
-    dependencies {
-        ...
-    }
-}
 ```
 
 Add dependency to build.gradle file(in module):
 
 ```java
 dependencies {
-    implementation 'com.expofp:fplan:1.1.0'
+    implementation 'com.expofp:fplan:1.1.1'
     ... 
 }
 ```
