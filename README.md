@@ -18,9 +18,9 @@ Add Maven repository reference to settings.gradle file(in root of your project):
 
 ```java
 repositories {
-        maven { url "https://s01.oss.sonatype.org/content/repositories/releases" }
-        ...
-    }
+    maven { url "https://s01.oss.sonatype.org/content/repositories/releases" }
+    ...
+}
 ```
 
 Add dependency to build.gradle file(in module):
@@ -82,7 +82,6 @@ import android.view.View;
 import com.expofp.fplan.FplanEventListener;
 import com.expofp.fplan.FplanView;
 import com.expofp.fplan.Route;
-
 
 public class MainActivity extends AppCompatActivity {
 
