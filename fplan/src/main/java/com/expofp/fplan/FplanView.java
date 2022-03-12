@@ -65,8 +65,7 @@ public class FplanView extends FrameLayout {
      * @param eventListener Events listener
      */
     public void init(String url, @Nullable FplanEventListener eventListener) {
-        String eventId = url.substring(8, url.indexOf('.'));
-        init(url, eventId, eventListener);
+        init(url, true, eventListener);
     }
 
     /**
@@ -77,31 +76,10 @@ public class FplanView extends FrameLayout {
      * @param eventListener Events listener
      */
     public void init(String url, Boolean noOverlay, @Nullable FplanEventListener eventListener) {
-        String eventId = url.substring(8, url.indexOf('.'));
-        init(url, eventId, noOverlay, eventListener);
-    }
-
-    /**
-     * Initializing a view
-     *
-     * @param url           Expo plan URL
-     * @param eventId       Event ID
-     * @param eventListener Events listener
-     */
-    public void init(String url, String eventId, @Nullable FplanEventListener eventListener) {
-        init(url, eventId, true, eventListener);
-    }
-
-    /**
-     * Initializing a view
-     *
-     * @param url           Expo plan URL
-     * @param eventId       Event ID
-     * @param noOverlay     True - Hides the panel with information about exhibitors
-     * @param eventListener Events listener
-     */
-    public void init(String url, String eventId, Boolean noOverlay, @Nullable FplanEventListener eventListener) {
         _eventListener = eventListener;
+
+        String eventId = getEventId(url);
+        String baseUrl = url.substring(0, url.indexOf(".expofp.com") + 11);
 
         _webView.post(() -> {
             String html = "";
@@ -110,14 +88,15 @@ public class FplanView extends FrameLayout {
                 byte[] buffer = new byte[inputStream.available()];
                 inputStream.read(buffer);
                 html = new String(buffer);
-                html = html.replace("$url#", url).replace("$eventId#", eventId).replace("$noOverlay#", noOverlay.toString());
+                html = html.replace("$url#", baseUrl).replace("$eventId#", eventId).replace("$noOverlay#", noOverlay.toString());
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
             ConnectivityManager cm = (ConnectivityManager) this.getContext().getSystemService(Activity.CONNECTIVITY_SERVICE);
             if (cm != null && cm.getActiveNetworkInfo() != null && cm.getActiveNetworkInfo().isConnected()) {
-                _webView.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
+                _webView.clearCache(true);
+                _webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
             } else {
                 _webView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
             }
@@ -196,6 +175,14 @@ public class FplanView extends FrameLayout {
             js = String.format("setCurrentPosition(null, null, false)");
             _webView.evaluateJavascript(js, null);
         });
+    }
+
+    private  String getEventId(String url) {
+        String baseUrl = url.replace("http://", "")
+                .replace("https://", "").replace("www.", "");
+
+        String eventId = baseUrl.substring(0, baseUrl.indexOf('.'));
+        return eventId;
     }
 
     private void initView(Context context) {
