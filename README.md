@@ -14,17 +14,12 @@ https://github.com/expofp/expofp-java-example
 
 ## Add to project
 
-Add Maven repository reference to build.gradle file(in root of your project):
+Add Maven repository reference to settings.gradle file(in root of your project):
 
 ```java
-buildscript {
-    repositories {
-        maven { url "https://s01.oss.sonatype.org/content/repositories/releases" }
-        ...
-    }
-    dependencies {
-        ...
-    }
+repositories {
+    maven { url "https://s01.oss.sonatype.org/content/repositories/releases" }
+    ...
 }
 ```
 
@@ -32,7 +27,7 @@ Add dependency to build.gradle file(in module):
 
 ```java
 dependencies {
-    implementation 'com.expofp:fplan:1.1.0'
+    implementation 'com.expofp:fplan:1.1.1'
     ... 
 }
 ```
@@ -47,6 +42,8 @@ Add Android permissions:
     package="com.expofp.myapplication">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
 
     <application
     ...
@@ -87,7 +84,6 @@ import android.view.View;
 import com.expofp.fplan.FplanEventListener;
 import com.expofp.fplan.FplanView;
 import com.expofp.fplan.Route;
-
 
 public class MainActivity extends AppCompatActivity {
 
