@@ -26,7 +26,7 @@ public class Helper {
     private static RouteLine[] parseRouteLines(JSONArray array) throws JSONException {
         RouteLine[] lines = new RouteLine[array.length()];
 
-        for (int i = 0; i < 10; i++){
+        for (int i = 0; i < lines.length; i++){
             lines[i] = parseRouteLine(array.getJSONObject(i));
         }
 

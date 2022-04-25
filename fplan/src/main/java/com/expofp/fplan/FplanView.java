@@ -198,6 +198,7 @@ public class FplanView extends FrameLayout {
         _webView.getSettings().setDomStorageEnabled(true);
         _webView.getSettings().setAllowFileAccess(true);
         _webView.getSettings().setAppCacheEnabled(true);
+        _webView.getSettings().setAppCacheMaxSize(1024*1024*100);
 
         _webView.addJavascriptInterface(new Object() {
             @JavascriptInterface
