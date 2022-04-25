@@ -27,7 +27,7 @@ Add dependency to build.gradle file(in module):
 
 ```java
 dependencies {
-    implementation 'com.expofp:fplan:1.1.1'
+    implementation 'com.expofp:fplan:1.1.2'
     ... 
 }
 ```
