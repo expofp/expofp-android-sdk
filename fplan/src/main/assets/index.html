@@ -106,20 +106,6 @@
         }
       }
     </style>
-
-    <link rel="preload" href="$url#/data/data.js" as="script" crossorigin="anonymous"/>
-    <link rel="preload" href="$url#/data/wf.data.js" as="script" crossorigin="anonymous"/>
-    <link rel="preload" href="$url#/data/fp.svg.js" as="script" crossorigin="anonymous"/>
-    <link rel="preload" href="$url#/floorplan.js" as="script" crossorigin="anonymous" />
-    <link rel="preload" href="$url#/vendors~floorplan.js" as="script" crossorigin="anonymous" />
-    <link rel="preload" href="$url#/vendor/fa/css/fontawesome-all.min.css" as="style" crossorigin="anonymous"/>
-    <link rel="preload" href="$url#/vendor/sanitize-css/sanitize.css" as="style" crossorigin="anonymous"/>
-    <link rel="preload" href="$url#/vendor/perfect-scrollbar/css/perfect-scrollbar.css" as="style" crossorigin="anonymous"/>
-    <link rel="preload" href="$url#/vendor/fa/webfonts/fa-regular-400.woff2" as="font" crossorigin="anonymous"/>
-    <link rel="preload" href="$url#/vendor/fa/webfonts/fa-solid-900.woff2" as="font" crossorigin="anonymous"/>
-    <link rel="preload" href="$url#/vendor/fa/webfonts/fa-light-300.woff2" as="font" crossorigin="anonymous"/>
-    <link rel="preload" href="$url#/fonts/oswald-v17-cyrillic_latin-500.woff2" as="font" crossorigin="anonymous"/>
-    <link rel="preload" href="$url#/fonts/oswald-v17-cyrillic_latin-300.woff2" as="font" crossorigin="anonymous"/>
 </head>
 <body>
 <div id="floorplan">
@@ -136,6 +122,21 @@
     </div>
 </div>
 <script>
+
+      const origFetch = window.fetch;
+      window.fetch = async function (url) {
+        if ((url.startsWith("file://") || getBaseUrl().startsWith("file://"))) {
+          const result = window.fplanView?.readFile(url);
+          return {
+            json: async function () {
+              return JSON.parse(result);
+            }
+          };
+        }
+
+        return await origFetch(url);
+      };
+
       function initFloorplan() {
         window.floorplan = new ExpoFP.FloorPlan({
           element: document.querySelector("#floorplan"),
@@ -143,13 +144,13 @@
           eventId: "$eventId#",
           noOverlay: $noOverlay#,
           onBoothClick: (e) => {
-            window.onBoothClickHandler?.postMessage(e.target.name);
+            window.fplanView?.callOnBoothClick(e.target.name);
           },
           onFpConfigured: () => {
-            window.onFpConfiguredHandler?.postMessage("FLOOR PLAN CONFIGURED");
+            window.fplanView?.callOnFpConfigured("FLOOR PLAN CONFIGURED");
           },
           onDirection: (e) => {
-            window.onDirectionHandler?.postMessage(JSON.stringify(e));
+            window.fplanView?.callOnDirection(JSON.stringify(e));
           },
         });
       }

@@ -6,7 +6,7 @@ plugins {
 
 ext {
     PUBLISH_GROUP_ID = 'com.expofp'
-    PUBLISH_VERSION = '1.1.6'
+    PUBLISH_VERSION = '1.1.7'
     PUBLISH_ARTIFACT_ID = 'fplan'
 }
 

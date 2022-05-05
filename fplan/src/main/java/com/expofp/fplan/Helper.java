@@ -4,10 +4,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -107,6 +110,25 @@ public class Helper {
         FileOutputStream fs = new FileOutputStream(file);
         fs.write(data);
         fs.close();
+    }
+
+    public static String convertStreamToString(InputStream is) throws Exception {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder sb = new StringBuilder();
+        String line = null;
+        while ((line = reader.readLine()) != null) {
+            sb.append(line).append("\n");
+        }
+        reader.close();
+        return sb.toString();
+    }
+
+    public static String readFile (String filePath) throws Exception {
+        File file = new File(filePath);
+        FileInputStream fiStream = new FileInputStream(file);
+        String result = convertStreamToString(fiStream);
+        fiStream.close();
+        return result;
     }
 
     public static Route parseRoute(String json) throws JSONException {

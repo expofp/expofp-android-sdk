@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Gravity;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
@@ -330,25 +331,30 @@ public class FplanView extends FrameLayout {
 
         webView.addJavascriptInterface(new Object() {
             @JavascriptInterface
-            public void postMessage(String message) {
+            public void callOnFpConfigured(String message) {
                 if (eventListener != null) {
-                    eventListener.onFpConfigured();
+                    try {
+                        eventListener.onFpConfigured();
+                    }
+                    catch (Exception ex){
+                        ex.printStackTrace();
+                    }
                 }
             }
-        }, "onFpConfiguredHandler");
-
-        webView.addJavascriptInterface(new Object() {
             @JavascriptInterface
-            public void postMessage(String boothName) {
+            public void callOnBoothClick(String boothName) {
                 if (eventListener != null) {
-                    eventListener.onBoothSelected(boothName);
+                    try {
+                        eventListener.onBoothSelected(boothName);
+                    }
+                    catch (Exception ex){
+                        ex.printStackTrace();
+                    }
                 }
             }
-        }, "onBoothClickHandler");
 
-        webView.addJavascriptInterface(new Object() {
             @JavascriptInterface
-            public void postMessage(String directionJson) throws JSONException {
+            public void callOnDirection(String directionJson) throws JSONException {
                 if (eventListener != null) {
                     try {
                         Route route = Helper.parseRoute(directionJson);
@@ -358,7 +364,22 @@ public class FplanView extends FrameLayout {
                     }
                 }
             }
-        }, "onDirectionHandler");
+
+            @JavascriptInterface
+            public String readFile(String filePath) throws Exception {
+                String result = null;
+
+                try {
+                    result = Helper.readFile(filePath.replace("file:///", ""));
+                }
+                catch (Exception ex){
+                    ex.printStackTrace();
+                }
+
+                return result;
+            }
+
+        }, "fplanView");
 
         this.addView(webView);
     }
