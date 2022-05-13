@@ -6,7 +6,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
-import android.net.Uri;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
@@ -95,14 +94,18 @@ public class FplanView extends FrameLayout {
         String eventId = getEventId(url);
         String baseUrl = url.substring(0, url.indexOf(".expofp.com") + 11);
         String params = "";
-        if(url.contains("?")){
+        if (url.contains("?")) {
             params = url.substring(url.indexOf("?"));
         }
 
         File cacheDir = getContext().getFilesDir();
         File fPlanCacheDir = new File(cacheDir, "fplan");
-        if(fPlanCacheDir.exists()){
-            fPlanCacheDir.delete();
+
+        if (connectivityManager != null && connectivityManager.getActiveNetworkInfo() != null &&
+                connectivityManager.getActiveNetworkInfo().isConnected() && fPlanCacheDir.exists()) {
+            //Log.d("D", "++++++++++++++ CLEAR FPLAN DIR: " + fPlanCacheDir.getAbsolutePath());
+            Helper.removeDirectory(fPlanCacheDir);
+            //Log.d("D", "++++++++++++++ FPLAN DIR exists: " + fPlanCacheDir.exists());
         }
 
         File expoCacheDir = new File(fPlanCacheDir, eventId);
@@ -131,18 +134,27 @@ public class FplanView extends FrameLayout {
 
             webView.post(() -> {
                 webView.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
-                webView.setWebViewClient(new WebViewClient(){
+                webView.setWebViewClient(new WebViewClient() {
                     @Nullable
                     @Override
                     public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                        if(request.getUrl().getScheme().equalsIgnoreCase("file")){
-                            String reqPath = request.getUrl().getPath().replace(expoCacheDir.getAbsolutePath(), "");
-                            if(reqPath.startsWith("/data/exhibitors/")){
-                                String reqUrl = baseUrl + reqPath;
+                        if (request.getUrl().getScheme().equalsIgnoreCase("file")) {
+                            String reqPath = request.getUrl().getPath().replace(expoCacheDir.getAbsolutePath(), "").substring(1);
+
+                            /*Log.d("D", "********* shouldInterceptRequest request.getUrl(): " + request.getUrl());
+                            Log.d("D", "********* shouldInterceptRequest request.getUrl().getPath(): " + request.getUrl().getPath());
+                            Log.d("D", "********* shouldInterceptRequest reqPath: " + reqPath);*/
+
+                            if(!reqPath.equalsIgnoreCase("index.html") && !Helper.cachingFiles.containsKey(reqPath)) {
+                                Log.d("D", "********* shouldInterceptRequest UPDATE reqPath: " + reqPath);
+                                String reqUrl = baseUrl + "/" + reqPath;
                                 Helper.updateFile(reqUrl, new File(request.getUrl().getPath()));
                             }
+                            /*if(reqPath.startsWith("data/exhibitors/")){
+                                String reqUrl = baseUrl + "/" + reqPath;
+                                Helper.updateFile(reqUrl, new File(request.getUrl().getPath()));
+                            }*/
                         }
-
                         return super.shouldInterceptRequest(view, request);
                     }
 
@@ -152,7 +164,7 @@ public class FplanView extends FrameLayout {
                         locker.lock();
 
                         loaded.set(true);
-                        if(cached.get() && loaded.get()) {
+                        if (cached.get() && loaded.get()) {
                             initFloorplan();
                         }
 
@@ -161,11 +173,10 @@ public class FplanView extends FrameLayout {
 
                     @Nullable
                     @Override
-                    public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request){
+                    public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                         try {
                             context.startActivity(new Intent(Intent.ACTION_VIEW, request.getUrl()));
-                        }
-                        catch (Exception ex){
+                        } catch (Exception ex) {
                             ex.printStackTrace();
                         }
                         return true;
@@ -179,7 +190,7 @@ public class FplanView extends FrameLayout {
                 locker.lock();
 
                 cached.set(true);
-                if(cached.get() && loaded.get()){
+                if (cached.get() && loaded.get()) {
                     webView.post(() -> {
                         initFloorplan();
                     });
@@ -187,11 +198,10 @@ public class FplanView extends FrameLayout {
 
                 locker.unlock();
             });
-        }
-        else {
+        } else {
             webView.post(() -> {
                 webView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ONLY);
-                webView.setWebViewClient(new WebViewClient(){
+                webView.setWebViewClient(new WebViewClient() {
                     @Nullable
                     @Override
                     public void onPageFinished(WebView view, String url) {
@@ -200,11 +210,10 @@ public class FplanView extends FrameLayout {
 
                     @Nullable
                     @Override
-                    public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request){
+                    public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                         try {
                             context.startActivity(new Intent(Intent.ACTION_VIEW, request.getUrl()));
-                        }
-                        catch (Exception ex){
+                        } catch (Exception ex) {
                             ex.printStackTrace();
                         }
                         return true;
@@ -223,9 +232,16 @@ public class FplanView extends FrameLayout {
      */
     public void selectBooth(String boothName) {
         webView.post(() -> {
-            String js = String.format("selectBooth('%s')", boothName);
+            String js = String.format("window.floorplan?.selectBooth('%s');", boothName);
             webView.evaluateJavascript(js, null);
         });
+    }
+
+    /**
+     * Deselects the selected booth
+     */
+    public void clearBooth() {
+        selectBooth("");
     }
 
     /**
@@ -235,7 +251,7 @@ public class FplanView extends FrameLayout {
      * @param y Y
      */
     public void setCurrentPosition(int x, int y) {
-        setCurrentPosition(x, y, false);
+        setCurrentPosition(x, y, null, null, false);
     }
 
     /**
@@ -243,11 +259,25 @@ public class FplanView extends FrameLayout {
      *
      * @param x     X
      * @param y     Y
+     * @param z     Floor
+     * @param angle Arrow direction
      * @param focus True - focus on a point
      */
-    public void setCurrentPosition(int x, int y, boolean focus) {
+    public void setCurrentPosition(int x, int y, @Nullable String z, @Nullable Integer angle, boolean focus) {
         webView.post(() -> {
-            String js = String.format("setCurrentPosition(%d, %d, %b)", x, y, focus);
+            String zString = z != null ? "'" + z + "'" : "null";
+            String angleString = angle != null ? angle.toString() : "null";
+            String js = String.format("window.floorplan?.selectCurrentPosition({ x: %d, y: %d, z: %s, angle: %s }, %b);", x, y, zString, angleString, focus);
+            webView.evaluateJavascript(js, null);
+        });
+    }
+
+    /**
+     * Deletes the blue-dot point
+     */
+    public void clearCurrentPosition() {
+        webView.post(() -> {
+            String js = String.format("window.floorplan?.selectCurrentPosition(null, false)");
             webView.evaluateJavascript(js, null);
         });
     }
@@ -271,7 +301,17 @@ public class FplanView extends FrameLayout {
      */
     public void buildRoute(String from, String to, boolean exceptInaccessible) {
         webView.post(() -> {
-            String js = String.format("selectRoute('%s', '%s', %b)", from, to, exceptInaccessible);
+            String js = String.format("window.floorplan?.selectRoute('%s', '%s', %b)", from, to, exceptInaccessible);
+            webView.evaluateJavascript(js, null);
+        });
+    }
+
+    /**
+     * Deletes the built route
+     */
+    public void clearRoute() {
+        webView.post(() -> {
+            String js = String.format("window.floorplan?.selectRoute(null, null, false)");
             webView.evaluateJavascript(js, null);
         });
     }
@@ -280,13 +320,9 @@ public class FplanView extends FrameLayout {
      * Clear floor plan
      */
     public void clear() {
-        webView.post(() -> {
-            String js = String.format("selectRoute(null, null, false)");
-            webView.evaluateJavascript(js, null);
-
-            js = String.format("setCurrentPosition(null, null, false)");
-            webView.evaluateJavascript(js, null);
-        });
+        clearBooth();
+        clearRoute();
+        clearCurrentPosition();
     }
 
     private void initFloorplan() {
@@ -356,11 +392,9 @@ public class FplanView extends FrameLayout {
             @JavascriptInterface
             public void callOnDirection(String directionJson) throws JSONException {
                 if (eventListener != null) {
-                    try {
-                        Route route = Helper.parseRoute(directionJson);
+                    Route route = Helper.parseRoute(directionJson);
+                    if(route != null){
                         eventListener.onRouteCreated(route);
-                    } catch (JSONException e) {
-                        throw e;
                     }
                 }
             }

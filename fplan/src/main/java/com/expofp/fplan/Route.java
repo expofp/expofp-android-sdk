@@ -4,7 +4,7 @@ import java.time.Duration;
 
 public class Route {
     private String distance;
-    private Duration time;
+    private int time;
     private RouteBooth from;
     private RouteBooth to;
     private RouteLine[] lines;
@@ -13,7 +13,7 @@ public class Route {
         return this.distance;
     }
 
-    public Duration getDuration() {
+    public int getTime() {
         return this.time;
     }
 
@@ -29,7 +29,7 @@ public class Route {
         return this.lines;
     }
 
-    public Route(RouteBooth from, RouteBooth to, String distance, Duration time, RouteLine[] lines){
+    public Route(RouteBooth from, RouteBooth to, String distance, int time, RouteLine[] lines){
         this.from = from;
         this.to = to;
         this.distance = distance;
