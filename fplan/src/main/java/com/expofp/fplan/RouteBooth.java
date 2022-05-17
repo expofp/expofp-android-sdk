@@ -1,5 +1,8 @@
 package com.expofp.fplan;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class RouteBooth {
     private String id;
     private String name;
@@ -15,5 +18,10 @@ public class RouteBooth {
 
     public String getName() {
         return this.name;
+    }
+
+    public static RouteBooth parseJson(JSONObject jObject) throws JSONException {
+        RouteBooth routeBooth = new RouteBooth(jObject.getString("id"), jObject.getString("name"));
+        return routeBooth;
     }
 }

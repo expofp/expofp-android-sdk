@@ -37,7 +37,6 @@
         height: 13px;
         background: #aaa;
         border-radius: 50%;
-        /* border: solid 1px #fff; */
         animation: lds-grid 1.2s linear infinite;
       }
 
@@ -165,6 +164,14 @@
 
         document.body.appendChild(expofpScript);
       }
+
+      function autoInit() {
+        if($autoInit#){
+            init();
+        }
+      }
+      autoInit();
+
     </script>
 </body>
 </html>

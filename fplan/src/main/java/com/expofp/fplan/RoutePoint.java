@@ -1,5 +1,8 @@
 package com.expofp.fplan;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class RoutePoint {
     private int x;
     private int y;
@@ -15,5 +18,10 @@ public class RoutePoint {
 
     public int getY() {
         return this.y;
+    }
+
+    public static RoutePoint parseJson(JSONObject jObject) throws JSONException {
+        RoutePoint point = new RoutePoint(jObject.getInt("x"), jObject.getInt("y"));
+        return point;
     }
 }
