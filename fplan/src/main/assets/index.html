@@ -124,7 +124,7 @@
 
       const origFetch = window.fetch;
       window.fetch = async function (url) {
-        if ((url.startsWith("file://") || getBaseUrl().startsWith("file://"))) {
+        if (url != null && url.startsWith != null && url.startsWith("file://")) {
           const result = window.fplanView?.readFile(url);
           return {
             json: async function () {
@@ -164,13 +164,6 @@
 
         document.body.appendChild(expofpScript);
       }
-
-      function autoInit() {
-        if($autoInit#){
-            init();
-        }
-      }
-      autoInit();
 
     </script>
 </body>

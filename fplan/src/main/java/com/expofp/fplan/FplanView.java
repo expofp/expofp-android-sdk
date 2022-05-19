@@ -82,8 +82,10 @@ public class FplanView extends FrameLayout {
      * @param eventListener Events listener
      */
     public void init(String url, @Nullable FplanEventListener eventListener) {
+        this.eventListener = eventListener;
+
         initThread = new Thread(() -> {
-            init(url, (Configuration)null);
+            init(url, true, (Configuration)null);
             initThread = null;
         });
         initThread.start();
@@ -93,21 +95,39 @@ public class FplanView extends FrameLayout {
      * Initializing a view
      *
      * @param url           Expo plan URL
-     * @param configuration Fplan configuration
+     * @param noOverlay     True - Hides the panel with information about exhibitors
      * @param eventListener Events listener
      */
-    public void init(String url, Configuration configuration, @Nullable FplanEventListener eventListener) {
+    public void init(String url, Boolean noOverlay, @Nullable FplanEventListener eventListener) {
         this.eventListener = eventListener;
 
         initThread = new Thread(() -> {
-            init(url, configuration);
+            init(url, noOverlay, (Configuration)null);
+            initThread = null;
+        });
+        initThread.start();
+    }
+
+    /**
+     * Initializing a view
+     *
+     * @param url           Expo plan URL
+     * @param noOverlay     True - Hides the panel with information about exhibitors
+     * @param configuration Fplan configuration
+     * @param eventListener Events listener
+     */
+    public void init(String url, Boolean noOverlay, @Nullable Configuration configuration, @Nullable FplanEventListener eventListener) {
+        this.eventListener = eventListener;
+
+        initThread = new Thread(() -> {
+            init(url, noOverlay, configuration);
             initThread = null;
         });
 
         initThread.start();
     }
 
-    private void init(String url, @Nullable Configuration initConfiguration){
+    private void init(String url, Boolean noOverlay, @Nullable Configuration configuration){
         String eventId = getEventId(url);
         String baseUrl = getBaseUrl(url);
         String configUrl = baseUrl + "/" + Constants.fplanConfigPath;
@@ -115,7 +135,6 @@ public class FplanView extends FrameLayout {
         File cacheDir = getContext().getFilesDir();
         File fPlanCacheDir = new File(cacheDir, Constants.fplanDirPath);
         File expoCacheDir = new File(fPlanCacheDir, eventId);
-        File fplanConfigPath = new File(expoCacheDir, Constants.fplanConfigPath);
         File indexFilePath = new File(expoCacheDir, "index.html");
 
         String params = "";
@@ -123,68 +142,24 @@ public class FplanView extends FrameLayout {
             params = url.substring(url.indexOf("?"));
         }
 
-        boolean online = connectivityManager != null && connectivityManager.getActiveNetworkInfo() != null &&
-                connectivityManager.getActiveNetworkInfo().isConnected();
-
-        Configuration configuration = initConfiguration;
-        if(configuration == null && online){
-            try {
-                InputStream in = new URL(configUrl).openStream();
-                String json = Helper.convertStreamToString(in);
-                configuration = Configuration.parseJson(json);
-                Log.d("Fplan", "Configuration file loaded from " + configUrl);
-            }
-            catch (Exception ex) { }
-        }
-
-        if(configuration == null){
-            try {
-                configuration = loadConfiguration(fplanConfigPath);
-                Log.d("Fplan", "Configuration file loaded from cache");
-            }
-            catch (Exception ex) { }
-        }
-
-        if(configuration == null){
-            Log.d("Fplan", "Failed to load configuration file from " + configUrl + " and from cache. The default configuration file will be loaded");
-            configuration = Helper.getDefaultConfiguration(url, true);
-        }
-
-        if (online && fPlanCacheDir.exists()) {
-            Helper.removeDirectory(fPlanCacheDir);
-        }
-
-        if(fplanConfigPath.exists()){
-            try {
-                fplanConfigPath.delete();
-            }
-            catch (Exception ex) { }
-        }
-
-        if(!fplanConfigPath.exists()) {
-            saveConfiguration(configuration, fplanConfigPath);
-        }
-
-        if(indexFilePath.exists() && online && configuration.getAndroidHtmlUrl() != null && !configuration.getAndroidHtmlUrl().equalsIgnoreCase("")){
-            try {
-                indexFilePath.delete();
-            }
-            catch (Exception ex) { }
-        }
-
-        if(!indexFilePath.exists()){
-            createIndexHtml(configuration, eventId, expoCacheDir, indexFilePath);
-        }
-        else {
-            Log.d("Fplan", "Html file loaded from cache");
-        }
-
         String finalParams = params;
         Context context = this.getContext();
 
-        if (online) {
-            initOnlineMode(configuration, expoCacheDir, indexFilePath, baseUrl, finalParams, context);
-        } else {
+        boolean online = connectivityManager != null && connectivityManager.getActiveNetworkInfo() != null &&
+                connectivityManager.getActiveNetworkInfo().isConnected();
+
+        if(online){
+
+            Configuration config = configuration != null ? configuration : loadConfiguration(configUrl, baseUrl);
+            if (fPlanCacheDir.exists()) {
+                Helper.removeDirectory(fPlanCacheDir);
+            }
+
+            createHtmlFile(config, eventId, noOverlay, expoCacheDir, indexFilePath);
+
+            initOnlineMode(config, expoCacheDir, indexFilePath, baseUrl, finalParams, context);
+        }
+        else {
             initOfflineMode(indexFilePath, finalParams, context);
         }
     }
@@ -314,35 +289,39 @@ public class FplanView extends FrameLayout {
         clearCurrentPosition();
     }
 
-    private void saveConfiguration(Configuration configuration, File fplanConfigPath){
-        try {
-            String json = configuration.toJson();
-            Helper.writeToFile(fplanConfigPath, json.getBytes(StandardCharsets.UTF_8));
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    private Configuration loadConfiguration(File fplanConfigPath) throws Exception {
+    private Configuration loadConfiguration(String configUrl, String expoUrl) {
         Configuration configuration = null;
 
-        String json = Helper.readFile(fplanConfigPath);
-        configuration = Configuration.parseJson(json);
+        if(configUrl != null && !configUrl.equalsIgnoreCase("")){
+            try {
+                InputStream in = new URL(configUrl).openStream();
+                String json = Helper.convertStreamToString(in);
+                Log.d(Constants.fplanLogTag, json);
+
+                configuration = Configuration.parseJson(json);
+                Log.d(Constants.fplanLogTag, "Configuration file loaded from " + configUrl);
+            }
+            catch (Exception ex) { }
+        }
+
+        if(configuration == null){
+            Log.d(Constants.fplanLogTag, "Failed to load configuration file from " + configUrl + " and from cache. The default configuration file will be loaded");
+            configuration = Helper.getDefaultConfiguration(expoUrl, true);
+        }
 
         return configuration;
     }
 
-    private void createIndexHtml(Configuration configuration, String eventId, File expoCacheDir, File indexFilePath){
+    private void createHtmlFile(Configuration configuration, String eventId, Boolean noOverlay, File expoCacheDir, File indexFilePath){
         String html = "";
         if(configuration.getAndroidHtmlUrl() != null && !configuration.getAndroidHtmlUrl().equalsIgnoreCase("")){
             try {
                 html = Helper.httpGet(new URL(configuration.getAndroidHtmlUrl()));
-                Log.d("Fplan", "Html file loaded from " + configuration.getAndroidHtmlUrl());
+                Log.d(Constants.fplanLogTag, "Html file loaded from " + configuration.getAndroidHtmlUrl());
             }
             catch (Exception ex){
                 html = "";
-                Log.d("Fplan", "Failed to load html file from " + configuration.getAndroidHtmlUrl() + ". The default html file will be loaded");
+                Log.d(Constants.fplanLogTag, "Failed to load html file from " + configuration.getAndroidHtmlUrl() + ". The default html file will be loaded");
             }
         }
 
@@ -352,7 +331,7 @@ public class FplanView extends FrameLayout {
                 byte[] buffer = new byte[inputStream.available()];
                 inputStream.read(buffer);
                 html = new String(buffer);
-                Log.d("Fplan", "Default html file loaded from Assets");
+                Log.d(Constants.fplanLogTag, "Default html file loaded from Assets");
             }
             catch (IOException ex) {
                 ex.printStackTrace();
@@ -361,9 +340,8 @@ public class FplanView extends FrameLayout {
 
         try {
             html = html.replace("$url#", "file:///" + expoCacheDir.getAbsolutePath())
-                    .replace("$autoInit#", "false")
                     .replace("$eventId#", eventId)
-                    .replace("$noOverlay#", configuration.getNoOverlay()
+                    .replace("$noOverlay#",noOverlay
                             .toString());
             Helper.writeToFile(indexFilePath, html.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
@@ -382,6 +360,9 @@ public class FplanView extends FrameLayout {
                 @Nullable
                 @Override
                 public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                    Log.d(Constants.fplanLogTag, "**** shouldInterceptRequest request.getUrl(): " + request.getUrl());
+                    Log.d(Constants.fplanLogTag, "**** shouldInterceptRequest request.getUrl().getScheme(): " + request.getUrl().getScheme());
+
                     if (request.getUrl().getScheme().equalsIgnoreCase("file")) {
                         String reqPath = request.getUrl().getPath().replace(expoCacheDir.getAbsolutePath(), "").substring(1);
 
@@ -390,7 +371,18 @@ public class FplanView extends FrameLayout {
                             Helper.downloadFile(reqUrl, new File(request.getUrl().getPath()));
                         }
                     }
-                    return super.shouldInterceptRequest(view, request);
+
+                    WebResourceResponse response = super.shouldInterceptRequest(view, request);
+                    Log.d(Constants.fplanLogTag, "**** shouldInterceptRequest response:");
+                    if(response != null){
+                        try {
+                            Log.d(Constants.fplanLogTag, Helper.convertStreamToString(response.getData()));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    return response;
                 }
 
                 @Nullable
