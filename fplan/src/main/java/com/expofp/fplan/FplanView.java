@@ -360,9 +360,6 @@ public class FplanView extends FrameLayout {
                 @Nullable
                 @Override
                 public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                    Log.d(Constants.fplanLogTag, "**** shouldInterceptRequest request.getUrl(): " + request.getUrl());
-                    Log.d(Constants.fplanLogTag, "**** shouldInterceptRequest request.getUrl().getScheme(): " + request.getUrl().getScheme());
-
                     if (request.getUrl().getScheme().equalsIgnoreCase("file")) {
                         String reqPath = request.getUrl().getPath().replace(expoCacheDir.getAbsolutePath(), "").substring(1);
 
@@ -373,15 +370,6 @@ public class FplanView extends FrameLayout {
                     }
 
                     WebResourceResponse response = super.shouldInterceptRequest(view, request);
-                    Log.d(Constants.fplanLogTag, "**** shouldInterceptRequest response:");
-                    if(response != null){
-                        try {
-                            Log.d(Constants.fplanLogTag, Helper.convertStreamToString(response.getData()));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-
                     return response;
                 }
 
