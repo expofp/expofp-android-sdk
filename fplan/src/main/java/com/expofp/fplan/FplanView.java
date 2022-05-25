@@ -5,10 +5,13 @@ import static android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.net.ConnectivityManager;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
+import android.webkit.GeolocationPermissions;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -296,7 +299,6 @@ public class FplanView extends FrameLayout {
             try {
                 InputStream in = new URL(configUrl).openStream();
                 String json = Helper.convertStreamToString(in);
-                Log.d(Constants.fplanLogTag, json);
 
                 configuration = Configuration.parseJson(json);
                 Log.d(Constants.fplanLogTag, "Configuration file loaded from " + configUrl);
@@ -397,7 +399,15 @@ public class FplanView extends FrameLayout {
                     return true;
                 }
             });
-            webView.setWebChromeClient(new WebChromeClient());
+
+            webView.setWebChromeClient(new WebChromeClient(){
+                @Nullable
+                @Override
+                public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+                    callback.invoke(origin, true, false);
+                }
+            });
+
             webView.loadUrl("file:///" + indexFilePath.getAbsolutePath() + params);
         });
 
@@ -420,6 +430,7 @@ public class FplanView extends FrameLayout {
     private void  initOfflineMode(File indexFilePath, String params, Context context) {
         webView.post(() -> {
             webView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ONLY);
+
             webView.setWebViewClient(new WebViewClient() {
                 @Nullable
                 @Override
@@ -438,7 +449,15 @@ public class FplanView extends FrameLayout {
                     return true;
                 }
             });
-            webView.setWebChromeClient(new WebChromeClient());
+
+            webView.setWebChromeClient(new WebChromeClient(){
+                @Nullable
+                @Override
+                public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+                    callback.invoke(origin, true, false);
+                }
+            });
+
             webView.loadUrl("file:///" + indexFilePath.getAbsolutePath() + params);
         });
     }
@@ -473,20 +492,26 @@ public class FplanView extends FrameLayout {
 
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setDomStorageEnabled(true);
+        webView.getSettings().setAppCacheEnabled(true);
+        webView.getSettings().setDatabaseEnabled(true);
         webView.getSettings().setAllowFileAccess(true);
         webView.getSettings().setAllowFileAccessFromFileURLs(true);
         webView.getSettings().setAllowUniversalAccessFromFileURLs(true);
-
+        webView.getSettings().setGeolocationEnabled(true);
         webView.getSettings().setAllowContentAccess(true);
         webView.getSettings().setMixedContentMode(MIXED_CONTENT_ALWAYS_ALLOW);
 
-        webView.getSettings().setAppCacheEnabled(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            if (0 != (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE)) {
+                WebView.setWebContentsDebuggingEnabled(true);
+            }
+        }
+
         File dir = context.getCacheDir();
         if (!dir.exists()) {
             dir.mkdirs();
         }
         webView.getSettings().setAppCachePath(dir.getPath());
-        webView.getSettings().setDatabaseEnabled(true);
 
         webView.addJavascriptInterface(new Object() {
             @JavascriptInterface
