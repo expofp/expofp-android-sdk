@@ -27,7 +27,7 @@ Add dependency to build.gradle file(in module):
 
 ```java
 dependencies {
-    implementation 'com.expofp:fplan:1.1.9'
+    implementation 'com.expofp:fplan:1.1.10'
     ... 
 }
 ```
@@ -95,7 +95,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         _fplanView = findViewById(R.id.fplanView);
-        _fplanView.init("https://demo.expofp.com", new FplanEventListener() {
+
+        //noOverlay - Hides the panel with information about exhibitors
+        _fplanView.init("https://demo.expofp.com", false, new FplanEventListener() {
             @Override
             public void onFpConfigured() {
 
@@ -112,14 +114,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
-    public void onSelectBoothClick(View view) {
-        _fplanView.selectBooth("720");
-    }
-
-    public void onBuidDirectionClick(View view) {
-        _fplanView.buildRoute("720", "751", false);
-    }
 }
 ```
 
@@ -128,23 +122,23 @@ public class MainActivity extends AppCompatActivity {
 Select booth:
 
 ```java
-fplanView.selectBooth("720");
+_fplanView.selectBooth("720");
 ```
 
 Build route:
 
 ```java
-fplanView.buildRoute("720", "751");
+_fplanView.buildRoute("720", "751");
 ```
 
 Set current position(Blue-dot):
 
 ```java
-fplanView.setCurrentPosition(2875, 1734);
+_fplanView.setCurrentPosition(2875, 1734);
 ```
 
 Clear floor plan:
 
 ```java
-fplanView.clear();
+_fplanView.clear();
 ```
