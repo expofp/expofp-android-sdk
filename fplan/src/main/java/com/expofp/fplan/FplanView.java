@@ -343,8 +343,7 @@ public class FplanView extends FrameLayout {
         try {
             html = html.replace("$url#", "file:///" + expoCacheDir.getAbsolutePath())
                     .replace("$eventId#", eventId)
-                    .replace("$noOverlay#",noOverlay
-                            .toString());
+                    .replace("$noOverlay#", noOverlay.toString());
             Helper.writeToFile(indexFilePath, html.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             e.printStackTrace();
