@@ -114,11 +114,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onSelectBoothClick(View view) {
-        _fplanView.selectBooth("1306");
+        _fplanView.selectBooth("720");
     }
 
     public void onBuidDirectionClick(View view) {
-        _fplanView.buildRoute("1306", "2206", false);
+        _fplanView.buildRoute("720", "751", false);
     }
 }
 ```
@@ -128,13 +128,13 @@ public class MainActivity extends AppCompatActivity {
 Select booth:
 
 ```java
-fplanView.selectBooth("1306");
+fplanView.selectBooth("720");
 ```
 
 Build route:
 
 ```java
-fplanView.buildRoute("1306", "2206");
+fplanView.buildRoute("720", "751");
 ```
 
 Set current position(Blue-dot):
