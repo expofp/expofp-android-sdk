@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         _fplanView = findViewById(R.id.fplanView);
-        _fplanView.init("https://wayfinding.expofp.com", new FplanEventListener() {
+        _fplanView.init("https://demo.expofp.com", new FplanEventListener() {
             @Override
             public void onFpConfigured() {
 
