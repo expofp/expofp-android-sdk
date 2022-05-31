@@ -5,10 +5,13 @@ import static android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.net.ConnectivityManager;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
+import android.webkit.GeolocationPermissions;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -25,6 +28,7 @@ import org.json.JSONException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -37,6 +41,9 @@ public class FplanView extends FrameLayout {
     private WebView webView;
     private FplanEventListener eventListener;
     private ConnectivityManager connectivityManager;
+
+    private Thread initThread;
+    private Thread[] downloadFileThreads;
 
     /**
      * Constructor
@@ -78,7 +85,13 @@ public class FplanView extends FrameLayout {
      * @param eventListener Events listener
      */
     public void init(String url, @Nullable FplanEventListener eventListener) {
-        init(url, true, eventListener);
+        this.eventListener = eventListener;
+
+        initThread = new Thread(() -> {
+            init(url, true, (Configuration)null);
+            initThread = null;
+        });
+        initThread.start();
     }
 
     /**
@@ -91,137 +104,91 @@ public class FplanView extends FrameLayout {
     public void init(String url, Boolean noOverlay, @Nullable FplanEventListener eventListener) {
         this.eventListener = eventListener;
 
+        initThread = new Thread(() -> {
+            init(url, noOverlay, (Configuration)null);
+            initThread = null;
+        });
+        initThread.start();
+    }
+
+    /**
+     * Initializing a view
+     *
+     * @param url           Expo plan URL
+     * @param noOverlay     True - Hides the panel with information about exhibitors
+     * @param configuration Fplan configuration
+     * @param eventListener Events listener
+     */
+    public void init(String url, Boolean noOverlay, @Nullable Configuration configuration, @Nullable FplanEventListener eventListener) {
+        this.eventListener = eventListener;
+
+        initThread = new Thread(() -> {
+            init(url, noOverlay, configuration);
+            initThread = null;
+        });
+
+        initThread.start();
+    }
+
+    private void init(String url, Boolean noOverlay, @Nullable Configuration configuration){
         String eventId = getEventId(url);
-        String baseUrl = url.substring(0, url.indexOf(".expofp.com") + 11);
+        String baseUrl = getBaseUrl(url);
+        String configUrl = baseUrl + "/" + Constants.fplanConfigPath;
+
+        File cacheDir = getContext().getFilesDir();
+        File fPlanCacheDir = new File(cacheDir, Constants.fplanDirPath);
+        File expoCacheDir = new File(fPlanCacheDir, eventId);
+        File indexFilePath = new File(expoCacheDir, "index.html");
+
         String params = "";
         if (url.contains("?")) {
             params = url.substring(url.indexOf("?"));
         }
 
-        File cacheDir = getContext().getFilesDir();
-        File fPlanCacheDir = new File(cacheDir, "fplan");
-
-        if (connectivityManager != null && connectivityManager.getActiveNetworkInfo() != null &&
-                connectivityManager.getActiveNetworkInfo().isConnected() && fPlanCacheDir.exists()) {
-            //Log.d("D", "++++++++++++++ CLEAR FPLAN DIR: " + fPlanCacheDir.getAbsolutePath());
-            Helper.removeDirectory(fPlanCacheDir);
-            //Log.d("D", "++++++++++++++ FPLAN DIR exists: " + fPlanCacheDir.exists());
-        }
-
-        File expoCacheDir = new File(fPlanCacheDir, eventId);
-        File indexFilePath = new File(expoCacheDir, "index.html");
-
-        String html = "";
-        try {
-            InputStream inputStream = this.getContext().getAssets().open("index.html");
-            byte[] buffer = new byte[inputStream.available()];
-            inputStream.read(buffer);
-            html = new String(buffer);
-            html = html.replace("$url#", "file:///" + expoCacheDir.getAbsolutePath()).replace("$eventId#", eventId).replace("$noOverlay#", noOverlay.toString());
-            Helper.writeToFile(indexFilePath, html.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         String finalParams = params;
         Context context = this.getContext();
 
-        if (connectivityManager != null && connectivityManager.getActiveNetworkInfo() != null && connectivityManager.getActiveNetworkInfo().isConnected()) {
+        boolean online = connectivityManager != null && connectivityManager.getActiveNetworkInfo() != null &&
+                connectivityManager.getActiveNetworkInfo().isConnected();
 
-            ReentrantLock locker = new ReentrantLock();
-            AtomicBoolean cached = new AtomicBoolean(false);
-            AtomicBoolean loaded = new AtomicBoolean(false);
+        if(online){
 
-            webView.post(() -> {
-                webView.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
-                webView.setWebViewClient(new WebViewClient() {
-                    @Nullable
-                    @Override
-                    public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                        if (request.getUrl().getScheme().equalsIgnoreCase("file")) {
-                            String reqPath = request.getUrl().getPath().replace(expoCacheDir.getAbsolutePath(), "").substring(1);
+            Configuration config = configuration != null ? configuration : loadConfiguration(configUrl, baseUrl);
+            if (fPlanCacheDir.exists()) {
+                Helper.removeDirectory(fPlanCacheDir);
+            }
 
-                            /*Log.d("D", "********* shouldInterceptRequest request.getUrl(): " + request.getUrl());
-                            Log.d("D", "********* shouldInterceptRequest request.getUrl().getPath(): " + request.getUrl().getPath());
-                            Log.d("D", "********* shouldInterceptRequest reqPath: " + reqPath);*/
+            createHtmlFile(config, eventId, noOverlay, expoCacheDir, indexFilePath);
 
-                            if(!reqPath.equalsIgnoreCase("index.html") && !Helper.cachingFiles.containsKey(reqPath)) {
-                                Log.d("D", "********* shouldInterceptRequest UPDATE reqPath: " + reqPath);
-                                String reqUrl = baseUrl + "/" + reqPath;
-                                Helper.updateFile(reqUrl, new File(request.getUrl().getPath()));
-                            }
-                            /*if(reqPath.startsWith("data/exhibitors/")){
-                                String reqUrl = baseUrl + "/" + reqPath;
-                                Helper.updateFile(reqUrl, new File(request.getUrl().getPath()));
-                            }*/
-                        }
-                        return super.shouldInterceptRequest(view, request);
+            initOnlineMode(config, expoCacheDir, indexFilePath, baseUrl, finalParams, context);
+        }
+        else {
+            initOfflineMode(indexFilePath, finalParams, context);
+        }
+    }
+
+    /**
+     * Stop FplanView
+     */
+    public void stop() {
+        if (initThread != null && initThread.isAlive()) {
+            try {
+                initThread.interrupt();
+            }
+            catch (Exception ex) {
+            }
+        }
+
+        if (downloadFileThreads != null && downloadFileThreads.length > 0) {
+            for (Thread thread : downloadFileThreads) {
+                if (thread != null && thread.isAlive()) {
+                    try {
+                        thread.interrupt();
                     }
-
-                    @Nullable
-                    @Override
-                    public void onPageFinished(WebView view, String url) {
-                        locker.lock();
-
-                        loaded.set(true);
-                        if (cached.get() && loaded.get()) {
-                            initFloorplan();
-                        }
-
-                        locker.unlock();
+                    catch (Exception ex) {
                     }
-
-                    @Nullable
-                    @Override
-                    public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                        try {
-                            context.startActivity(new Intent(Intent.ACTION_VIEW, request.getUrl()));
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                        return true;
-                    }
-                });
-                webView.setWebChromeClient(new WebChromeClient());
-                webView.loadUrl("file:///" + indexFilePath.getAbsolutePath() + finalParams);
-            });
-
-            Helper.updateCache(expoCacheDir, baseUrl, () -> {
-                locker.lock();
-
-                cached.set(true);
-                if (cached.get() && loaded.get()) {
-                    webView.post(() -> {
-                        initFloorplan();
-                    });
                 }
-
-                locker.unlock();
-            });
-        } else {
-            webView.post(() -> {
-                webView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ONLY);
-                webView.setWebViewClient(new WebViewClient() {
-                    @Nullable
-                    @Override
-                    public void onPageFinished(WebView view, String url) {
-                        initFloorplan();
-                    }
-
-                    @Nullable
-                    @Override
-                    public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                        try {
-                            context.startActivity(new Intent(Intent.ACTION_VIEW, request.getUrl()));
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                        return true;
-                    }
-                });
-                webView.setWebChromeClient(new WebChromeClient());
-                webView.loadUrl("file:///" + indexFilePath.getAbsolutePath() + finalParams);
-            });
+            }
         }
     }
 
@@ -325,9 +292,183 @@ public class FplanView extends FrameLayout {
         clearCurrentPosition();
     }
 
+    private Configuration loadConfiguration(String configUrl, String expoUrl) {
+        Configuration configuration = null;
+
+        if(configUrl != null && !configUrl.equalsIgnoreCase("")){
+            try {
+                InputStream in = new URL(configUrl).openStream();
+                String json = Helper.convertStreamToString(in);
+
+                configuration = Configuration.parseJson(json);
+                Log.d(Constants.fplanLogTag, "Configuration file loaded from " + configUrl);
+            }
+            catch (Exception ex) { }
+        }
+
+        if(configuration == null){
+            Log.d(Constants.fplanLogTag, "Failed to load configuration file from " + configUrl + " and from cache. The default configuration file will be loaded");
+            configuration = Helper.getDefaultConfiguration(expoUrl, true);
+        }
+
+        return configuration;
+    }
+
+    private void createHtmlFile(Configuration configuration, String eventId, Boolean noOverlay, File expoCacheDir, File indexFilePath){
+        String html = "";
+        if(configuration.getAndroidHtmlUrl() != null && !configuration.getAndroidHtmlUrl().equalsIgnoreCase("")){
+            try {
+                html = Helper.httpGet(new URL(configuration.getAndroidHtmlUrl()));
+                Log.d(Constants.fplanLogTag, "Html file loaded from " + configuration.getAndroidHtmlUrl());
+            }
+            catch (Exception ex){
+                html = "";
+                Log.d(Constants.fplanLogTag, "Failed to load html file from " + configuration.getAndroidHtmlUrl() + ". The default html file will be loaded");
+            }
+        }
+
+        if(html == null || html.equalsIgnoreCase("")){
+            try {
+                InputStream inputStream = this.getContext().getAssets().open("index.html");
+                byte[] buffer = new byte[inputStream.available()];
+                inputStream.read(buffer);
+                html = new String(buffer);
+                Log.d(Constants.fplanLogTag, "Default html file loaded from Assets");
+            }
+            catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        try {
+            html = html.replace("$url#", "file:///" + expoCacheDir.getAbsolutePath())
+                    .replace("$eventId#", eventId)
+                    .replace("$noOverlay#", noOverlay.toString());
+            Helper.writeToFile(indexFilePath, html.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void initOnlineMode(Configuration configuration, File expoCacheDir, File indexFilePath, String baseUrl, String params, Context context) {
+        ReentrantLock locker = new ReentrantLock();
+        AtomicBoolean cached = new AtomicBoolean(false);
+        AtomicBoolean loaded = new AtomicBoolean(false);
+
+        webView.post(() -> {
+            webView.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
+            webView.setWebViewClient(new WebViewClient() {
+                @Nullable
+                @Override
+                public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                    if (request.getUrl().getScheme().equalsIgnoreCase("file")) {
+                        String reqPath = request.getUrl().getPath().replace(expoCacheDir.getAbsolutePath(), "").substring(1);
+
+                        if(!reqPath.equalsIgnoreCase("index.html") && !Helper.containFile(reqPath, configuration.getFiles())) {
+                            String reqUrl = baseUrl + "/" + reqPath;
+                            Helper.downloadFile(reqUrl, new File(request.getUrl().getPath()));
+                        }
+                    }
+
+                    WebResourceResponse response = super.shouldInterceptRequest(view, request);
+                    return response;
+                }
+
+                @Nullable
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    locker.lock();
+
+                    loaded.set(true);
+                    if (cached.get() && loaded.get()) {
+                        initFloorplan();
+                    }
+
+                    locker.unlock();
+                }
+
+                @Nullable
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                    try {
+                        context.startActivity(new Intent(Intent.ACTION_VIEW, request.getUrl()));
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                    return true;
+                }
+            });
+
+            webView.setWebChromeClient(new WebChromeClient(){
+                @Nullable
+                @Override
+                public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+                    callback.invoke(origin, true, false);
+                }
+            });
+
+            webView.loadUrl("file:///" + indexFilePath.getAbsolutePath() + params);
+        });
+
+        downloadFileThreads = Helper.downloadFiles(expoCacheDir, configuration.getFiles(), () -> {
+            locker.lock();
+
+            cached.set(true);
+            if (cached.get() && loaded.get()) {
+                webView.post(() -> {
+                    initFloorplan();
+                });
+            }
+
+            locker.unlock();
+
+            downloadFileThreads = null;
+        });
+    }
+
+    private void  initOfflineMode(File indexFilePath, String params, Context context) {
+        webView.post(() -> {
+            webView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ONLY);
+
+            webView.setWebViewClient(new WebViewClient() {
+                @Nullable
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    initFloorplan();
+                }
+
+                @Nullable
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                    try {
+                        context.startActivity(new Intent(Intent.ACTION_VIEW, request.getUrl()));
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                    return true;
+                }
+            });
+
+            webView.setWebChromeClient(new WebChromeClient(){
+                @Nullable
+                @Override
+                public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+                    callback.invoke(origin, true, false);
+                }
+            });
+
+            webView.loadUrl("file:///" + indexFilePath.getAbsolutePath() + params);
+        });
+    }
+
     private void initFloorplan() {
         String js = String.format("init()");
         webView.evaluateJavascript(js, null);
+    }
+
+    private String getBaseUrl(String url) {
+        String baseUrl = url.substring(0, url.indexOf("." + Constants.expoFpDomain) + Constants.expoFpDomain.length() + 1);
+        return baseUrl;
     }
 
     private String getEventId(String url) {
@@ -350,20 +491,26 @@ public class FplanView extends FrameLayout {
 
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setDomStorageEnabled(true);
+        webView.getSettings().setAppCacheEnabled(true);
+        webView.getSettings().setDatabaseEnabled(true);
         webView.getSettings().setAllowFileAccess(true);
         webView.getSettings().setAllowFileAccessFromFileURLs(true);
         webView.getSettings().setAllowUniversalAccessFromFileURLs(true);
-
+        webView.getSettings().setGeolocationEnabled(true);
         webView.getSettings().setAllowContentAccess(true);
         webView.getSettings().setMixedContentMode(MIXED_CONTENT_ALWAYS_ALLOW);
 
-        webView.getSettings().setAppCacheEnabled(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            if (0 != (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE)) {
+                WebView.setWebContentsDebuggingEnabled(true);
+            }
+        }
+
         File dir = context.getCacheDir();
         if (!dir.exists()) {
             dir.mkdirs();
         }
         webView.getSettings().setAppCachePath(dir.getPath());
-        webView.getSettings().setDatabaseEnabled(true);
 
         webView.addJavascriptInterface(new Object() {
             @JavascriptInterface
@@ -392,7 +539,7 @@ public class FplanView extends FrameLayout {
             @JavascriptInterface
             public void callOnDirection(String directionJson) throws JSONException {
                 if (eventListener != null) {
-                    Route route = Helper.parseRoute(directionJson);
+                    Route route = Route.parseJson(directionJson);
                     if(route != null){
                         eventListener.onRouteCreated(route);
                     }

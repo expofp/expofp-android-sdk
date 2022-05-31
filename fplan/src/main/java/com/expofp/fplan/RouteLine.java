@@ -1,5 +1,8 @@
 package com.expofp.fplan;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class RouteLine {
     private RoutePoint startPoint;
     private RoutePoint endPoint;
@@ -23,5 +26,16 @@ public class RouteLine {
 
     public int getWeight() {
         return this.weight;
+    }
+
+    public static RouteLine parseJson(JSONObject jObject) throws JSONException {
+        RoutePoint startPoint = RoutePoint.parseJson(jObject.getJSONObject("p0"));
+        RoutePoint endPoint = RoutePoint.parseJson(jObject.getJSONObject("p1"));
+
+        int weight = jObject.has("weight") ? jObject.getInt("weight") : 0;
+        boolean ended = jObject.has("ended") ? jObject.getBoolean("ended") : false;
+
+        RouteLine line = new RouteLine(startPoint, endPoint, weight, ended);
+        return line;
     }
 }
