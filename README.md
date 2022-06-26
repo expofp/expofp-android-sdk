@@ -1,7 +1,7 @@
 # ExpoFP Fplan
 > Android library for displaying expo plans.
 > Create your expo plan on the website https://expofp.com then use the URL of the created expo plan when you working with the library.
-> Live demo [_here_](https://github.com/expofp/expofp-java-example).
+> Live demo [_here_](https://github.com/expofp/expofp-example-android).
 > Version for iOS [_here_](https://github.com/expofp/expofp-ios-sdk).
 
 ![1024-1 — копия](https://user-images.githubusercontent.com/60826376/146822762-66188b40-54f4-49dd-9479-9166d8aec672.jpeg)
