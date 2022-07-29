@@ -9,10 +9,14 @@
 ## Table of Contents
 * [2.0.0 version](#2.0.0)
   * [What's New](#2.0.0-what-is-new)
+  * [Migration from 1.1.10](#2.0.0-migration-1.1.10)
   * [Setup](#2.0.0-setup)
+  * [Permissions](#2.0.0-permissions)
   * [Usage](#2.0.0-usage)
   * [Functions](#2.0.0-functions)
   * [Events](#2.0.0-events)
+  * [Navigation](#2.0.0-navigation)
+  * [Crowdconnected location provider](#2.0.0-cc-navigation)
 * [1.1.10 version](#1.1.10)
   * [Setup](#1.1.10-setup)
   * [Usage](#1.1.10-usage)
@@ -25,6 +29,44 @@
 ### What's New in ExpoFP Fplan version 2.0.0<a id='2.0.0-what-is-new'></a>
 
 In the new version of the library, all FplanView settings have been moved to the Settings class. Some function and event names have been changed to match the [JavaScript API Reference](https://developer.expofp.com/reference). Navigation from CrowdConnected has also been added.
+
+### Migration from 1.1.10<a id='2.0.0-migration-1.1.10'></a>
+
+All FplanView settings have been moved to a separate class:
+
+```java
+com.expofp.fplan.Settings settings = new com.expofp.fplan.Settings("https://demo.expofp.com", false, false)
+                //.withLocationProvider(new CrowdConnectedProvider(getApplication(), new com.expofp.crowdconnected.Settings("APP_KEY","TOKEN","SECRET")))
+                //.withGlobalLocationProvider()
+                .withEventsListener(new FplanEventsListener() {
+                    @Override
+                    public void onFpConfigured() { }
+
+                    @Override
+                    public void onBoothClick(String boothName) { }
+
+                    @Override
+                    public void onDirection(Route route) { }
+                });
+                
+fplanView.init(settings);
+```
+
+Some FplanView functions have been renamed:
+
+```java
+buildRoute -> selectRoute
+
+setCurrentPosition -> selectCurrentPosition
+```
+
+Some FplanEventsListener methods have been renamed:
+
+```java
+onBoothSelected -> onBoothClick
+
+onRouteCreated -> onDirection
+```
 
 ### Setup<a id='2.0.0-setup'></a>
 
@@ -53,19 +95,26 @@ dependencies {
 }
 ```
 
-Add Android permissions:
+### Permissions<a id='2.0.0-permissions'></a>
 
+Now there is no need to specify permissions, now each package contains a manifest file with permissions.
+
+The com.expofp.fplan package contains a manifest file with permissions:
 ```xml
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.expofp.myapplication">
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+<uses-permission android:name="android.permission.INTERNET"/>
+```
 
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+The com.expofp.crowdconnected package contains a manifest file with permissions:
+```xml
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
-    <application
-    ...
+<uses-permission android:name="android.permission.BLUETOOTH" />
+<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 ```
 
 ### Usage<a id='2.0.0-usage'></a>
@@ -98,8 +147,8 @@ Init FplanView:
 ```java
 //noOverlay - Hides the panel with information about exhibitors
 Settings settings = new Settings("https://demo.expofp.com", false)
-                ////If you want to use navigation from CrowdConnected, configure LocationProvider
-                //.withLocationProvider(new CrowdConnectedProvider(activity, "APP_KEY", "TOKEN", "SECRET"), false)
+                //.withLocationProvider(new CrowdConnectedProvider(getApplication(), new com.expofp.crowdconnected.Settings("APP_KEY","TOKEN","SECRET")))
+                //.withGlobalLocationProvider()
                 .withEventsListener(new FplanEventsListener() {
                     @Override
                     public void onFpConfigured() {
@@ -116,7 +165,15 @@ Settings settings = new Settings("https://demo.expofp.com", false)
 
 _fplanView = findViewById(R.id.fplanView);
 _fplanView.init(settings);
+```
 
+Stop FplanView.  
+After you finish working with FplanView, you need to stop it.  
+To do this, you need to call the 'destroy' function:  
+
+```java
+_fplanView = findViewById(R.id.fplanView);
+_fplanView.destroy();
 ```
 
 ### Functions<a id='2.0.0-functions'></a>
@@ -175,6 +232,68 @@ Route create event:
 @Override
 public void onDirection(Route route) {
 }
+```
+
+### Navigation<a id='2.0.0-navigation'></a>
+
+There are 2 ways to use navigation in FplanView. The first way is to explicitly specify the provider in the FplanView settings. In this case, FplanView will start and stop the LocationProvider on its own.
+
+```java
+Settings settings = new Settings("https://demo.expofp.com", false)
+                .withLocationProvider(SOME_LOCATION_PROVIDER);
+
+_fplanView = findViewById(R.id.fplanView);
+_fplanView.init(settings);
+```
+
+The second way is to run the GlobalLocationProvider when the program starts:
+
+```java
+GlobalLocationProvider.init(SOME_LOCATION_PROVIDER);
+GlobalLocationProvider.start();
+```
+
+When using the GlobalLocationProvider in the FplanView settings, you need to call the 'withGlobalLocationProvider' function:
+
+```java
+Settings settings = new Settings("https://demo.expofp.com", false)
+                 .withGlobalLocationProvider();
+
+_fplanView = findViewById(R.id.fplanView);
+_fplanView.init(settings);
+```
+
+When the program terminates, the GlobalLocationProvider must also be stopped:
+
+``0`java
+GlobalLocationProvider.stop();
+```
+
+
+### Crowdconnected location provider<a id='2.0.0-cc-navigation'></a>
+
+LocationProvider initialization:
+
+```java
+com.expofp.crowdconnected.Settings lpSettings = new com.expofp.crowdconnected.Settings("APP_KEY", "TOKEN", "SECRET", Mode.IPS_ONLY);
+LocationProvider locationProvider = new CrowdConnectedProvider(getApplication(), lpSettings);
+```
+
+Aliases:
+
+```java
+com.expofp.crowdconnected.Settings lpSettings = new com.expofp.crowdconnected.Settings("APP_KEY", "TOKEN", "SECRET", Mode.IPS_ONLY);
+lpSettings.setAlias("KEY_1", "VALUE_1");
+lpSettings.setAlias("KEY_2", "VALUE_2");
+LocationProvider locationProvider = new CrowdConnectedProvider(getApplication(), lpSettings);
+```
+
+Notification settings:
+
+```java
+com.expofp.crowdconnected.Settings lpSettings = new com.expofp.crowdconnected.Settings("APP_KEY", "TOKEN", "SECRET", Mode.IPS_ONLY);
+lpSettings.setServiceNotificationInfo("NOTIFICATION_TEXT", SERVICE_ICON);
+LocationProvider locationProvider = new CrowdConnectedProvider(getApplication(), lpSettings);
 ```
 
 ## 1.1.10 version<a id='1.1.10'></a>
