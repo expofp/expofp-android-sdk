@@ -7,16 +7,16 @@
 ![1024-1 — копия](https://user-images.githubusercontent.com/60826376/146822762-66188b40-54f4-49dd-9479-9166d8aec672.jpeg)
 
 ## Table of Contents
-* [2.0.0 version](#2.0.0)
-  * [What's New](#2.0.0-what-is-new)
-  * [Migration from 1.1.10](#2.0.0-migration-1.1.10)
-  * [Setup](#2.0.0-setup)
-  * [Permissions](#2.0.0-permissions)
-  * [Usage](#2.0.0-usage)
-  * [Functions](#2.0.0-functions)
-  * [Events](#2.0.0-events)
-  * [Navigation](#2.0.0-navigation)
-  * [Crowdconnected location provider](#2.0.0-cc-navigation)
+* [2.2.1 version](#2.2.1)
+  * [What's New](#2.2.1-what-is-new)
+  * [Migration from 1.1.10](#2.2.1-migration-1.1.10)
+  * [Setup](#2.2.1-setup)
+  * [Permissions](#2.2.1-permissions)
+  * [Usage](#2.2.1-usage)
+  * [Functions](#2.2.1-functions)
+  * [Events](#2.2.1-events)
+  * [Navigation](#2.2.1-navigation)
+  * [Crowdconnected location provider](#2.2.1-cc-navigation)
 * [1.1.10 version](#1.1.10)
   * [Setup](#1.1.10-setup)
   * [Usage](#1.1.10-usage)
@@ -24,13 +24,13 @@
   * [Events](#1.1.10-events)
 
 
-## 2.0.0 version<a id='2.0.0'></a>
+## 2.2.1 version<a id='2.2.1'></a>
 
-### What's New in ExpoFP Fplan version 2.0.0<a id='2.0.0-what-is-new'></a>
+### What's New in ExpoFP Fplan version 2.2.1<a id='2.2.1-what-is-new'></a>
 
 In the new version of the library, all FplanView settings have been moved to the Settings class. Some function and event names have been changed to match the [JavaScript API Reference](https://developer.expofp.com/reference). Navigation from CrowdConnected has also been added.
 
-### Migration from 1.1.10<a id='2.0.0-migration-1.1.10'></a>
+### Migration from 1.1.10<a id='2.2.1-migration-1.1.10'></a>
 
 All FplanView settings have been moved to a separate class:
 
@@ -68,7 +68,7 @@ onBoothSelected -> onBoothClick
 onRouteCreated -> onDirection
 ```
 
-### Setup<a id='2.0.0-setup'></a>
+### Setup<a id='2.2.1-setup'></a>
 
 Add Maven repository reference to settings.gradle file(in root of your project):
 
@@ -86,16 +86,16 @@ Add dependency to build.gradle file(in module):
 
 ```java
 dependencies {
-    implementation 'com.expofp:common:2.0.0'
-    implementation 'com.expofp:fplan:2.0.0'
+    implementation 'com.expofp:common:2.2.1'
+    implementation 'com.expofp:fplan:2.2.1'
     
     //If you want to use navigation from CrowdConnected, add a link to the package
-    //implementation 'com.expofp:crowdconnected:2.0.0'
+    //implementation 'com.expofp:crowdconnected:2.2.1'
     ... 
 }
 ```
 
-### Permissions<a id='2.0.0-permissions'></a>
+### Permissions<a id='2.2.1-permissions'></a>
 
 Now there is no need to specify permissions, now each package contains a manifest file with permissions.
 
@@ -117,7 +117,7 @@ The com.expofp.crowdconnected package contains a manifest file with permissions:
 <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 ```
 
-### Usage<a id='2.0.0-usage'></a>
+### Usage<a id='2.2.1-usage'></a>
 
 Add FplanView to layout:
 
@@ -161,6 +161,11 @@ Settings settings = new Settings("https://demo.expofp.com", false)
                     @Override
                     public void onDirection(Route route) {
                     }
+                    
+                    @Override
+                    public void onMessageReceived(String message) {
+                    }
+                    
                 });
 
 _fplanView = findViewById(R.id.fplanView);
@@ -176,7 +181,7 @@ _fplanView = findViewById(R.id.fplanView);
 _fplanView.destroy();
 ```
 
-### Functions<a id='2.0.0-functions'></a>
+### Functions<a id='2.2.1-functions'></a>
 
 Select booth:
 
@@ -208,7 +213,7 @@ Clear floor plan:
 _fplanView.clear();
 ```
 
-### Events<a id='2.0.0-events'></a>
+### Events<a id='2.2.1-events'></a>
 
 Floor plan ready event:
 
@@ -234,7 +239,15 @@ public void onDirection(Route route) {
 }
 ```
 
-### Navigation<a id='2.0.0-navigation'></a>
+Receive message event:
+
+```java
+@Override
+public void onMessageReceived(String message) {
+}
+```
+
+### Navigation<a id='2.2.1-navigation'></a>
 
 There are 2 ways to use navigation in FplanView. The first way is to explicitly specify the provider in the FplanView settings. In this case, FplanView will start and stop the LocationProvider on its own.
 
@@ -265,12 +278,12 @@ _fplanView.init(settings);
 
 When the program terminates, the GlobalLocationProvider must also be stopped:
 
-``0`java
+```java
 GlobalLocationProvider.stop();
 ```
 
 
-### Crowdconnected location provider<a id='2.0.0-cc-navigation'></a>
+### Crowdconnected location provider<a id='2.2.1-cc-navigation'></a>
 
 LocationProvider initialization:
 
