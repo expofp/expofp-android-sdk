@@ -36,7 +36,7 @@
 
 ### What's New in ExpoFP Fplan version 3.0.3<a id='3.0.3-what-is-new'></a>
 
-In this version of the SDK, navigation from IndoorAtlas was added, and bugs were also fixed.
+In this version of the SDK, navigation from IndoorAtlas was added, and bugs were fixed.
 
 ### Setup<a id='3.0.3-setup'></a>
 
