@@ -7,15 +7,15 @@
 ![1024-1 — копия](https://user-images.githubusercontent.com/60826376/146822762-66188b40-54f4-49dd-9479-9166d8aec672.jpeg)
 
 ## Table of Contents
-* [3.0.0 version](#3.0.0)
-  * [What's New](#3.0.0-what-is-new)
-  * [Setup](#3.0.0-setup)
-  * [Usage](#3.0.0-usage)
-  * [Functions](#3.0.0-functions)
-  * [Events](#3.0.0-events)
-  * [Navigation](#3.0.0-navigation)
-  * [CrowdConnected location provider](#3.0.0-cc-navigation)
-  * [IndoorAtlas location provider](#3.0.0-ia-navigation)
+* [3.0.3 version](#3.0.3)
+  * [What's New](#3.0.3-what-is-new)
+  * [Setup](#3.0.3-setup)
+  * [Usage](#3.0.3-usage)
+  * [Functions](#3.0.3-functions)
+  * [Events](#3.0.3-events)
+  * [Navigation](#3.0.3-navigation)
+  * [CrowdConnected location provider](#3.0.3-cc-navigation)
+  * [IndoorAtlas location provider](#3.0.3-ia-navigation)
 * [2.2.1 version](#2.2.1)
   * [What's New](#2.2.1-what-is-new)
   * [Migration from 1.1.10](#2.2.1-migration-1.1.10)
@@ -32,13 +32,13 @@
   * [Functions](#1.1.10-functions)
   * [Events](#1.1.10-events)
 
-## 3.0.0 version<a id='3.0.0'></a>
+## 3.0.3 version<a id='3.0.3'></a>
 
-### What's New in ExpoFP Fplan version 3.0.0<a id='3.0.0-what-is-new'></a>
+### What's New in ExpoFP Fplan version 3.0.3<a id='3.0.3-what-is-new'></a>
 
-In the new version of the library, all FplanView settings have been moved to the Settings class. Some function and event names have been changed to match the [JavaScript API Reference](https://developer.expofp.com/reference). Navigation from CrowdConnected has also been added.
+In this version of the SDK, navigation from IndoorAtlas was added, and bugs were also fixed.
 
-### Setup<a id='3.0.0-setup'></a>
+### Setup<a id='3.0.3-setup'></a>
 
 Add Maven repository reference to settings.gradle file(in root of your project):
 
@@ -49,7 +49,7 @@ repositories {
     //If you want to use navigation from CrowdConnected, add a link to the repository
     //maven { url "https://maven2.crowdconnected.net/" }
 	
-	//If you want to use navigation from IndoorAtlas, add a link to the repository
+    //If you want to use navigation from IndoorAtlas, add a link to the repository
     //maven { url "https://dl.cloudsmith.io/public/indooratlas/mvn-public/maven/" }
     ...
 }
@@ -59,17 +59,21 @@ Add dependency to build.gradle file(in module):
 
 ```java
 dependencies {
-    implementation 'com.expofp:common:3.0.0'
-    implementation 'com.expofp:fplan:3.0.0'
+    implementation 'com.expofp:common:3.0.3'
+    implementation 'com.expofp:fplan:3.0.3'
     
     //If you want to use navigation from CrowdConnected, add a link to the package
-    //implementation 'com.expofp:crowdconnected:3.0.0'
+    //implementation 'com.expofp:crowdconnected:3.0.3'
+    
+    //If you want to use navigation from IndoorAtlas, add a link to the package
+    //implementation 'com.expofp:indooratlas:3.0.3'
+    
     ... 
 }
 ```
 
 
-### Usage<a id='3.0.0-usage'></a>
+### Usage<a id='3.0.3-usage'></a>
 
 Add FplanView to layout:
 
@@ -134,7 +138,7 @@ _fplanView = findViewById(R.id.fplanView);
 _fplanView.destroy();
 ```
 
-### Functions<a id='3.0.0-functions'></a>
+### Functions<a id='3.0.3-functions'></a>
 
 Select booth:
 
@@ -166,7 +170,7 @@ Clear floor plan:
 _fplanView.clear();
 ```
 
-### Events<a id='3.0.0-events'></a>
+### Events<a id='3.0.3-events'></a>
 
 Floor plan ready event:
 
@@ -200,7 +204,7 @@ public void onMessageReceived(String message) {
 }
 ```
 
-### Navigation<a id='3.0.0-navigation'></a>
+### Navigation<a id='3.0.3-navigation'></a>
 
 There are 2 ways to use navigation in FplanView. The first way is to explicitly specify the provider in the FplanView settings. In this case, FplanView will start and stop the LocationProvider on its own.
 
@@ -240,7 +244,7 @@ GlobalLocationProvider.stop();
 ```
 
 
-### CrowdConnected location provider<a id='3.0.0-cc-navigation'></a>
+### CrowdConnected location provider<a id='3.0.3-cc-navigation'></a>
 
 Setup:
 
@@ -257,7 +261,7 @@ repositories {
 
 ```java
 dependencies {
-    implementation 'com.expofp:crowdconnected:3.0.0'
+    implementation 'com.expofp:crowdconnected:3.0.3'
     implementation 'net.crowdconnected.android.core:android-core:1.3.1'
     implementation 'net.crowdconnected.android.ips:android-ips:1.3.1'
     implementation 'net.crowdconnected.android.geo:android-geo:1.3.1'
@@ -290,7 +294,7 @@ lpSettings.setServiceNotificationInfo("NOTIFICATION_TEXT", SERVICE_ICON);
 LocationProvider locationProvider = new com.expofp.crowdconnected.CrowdConnectedProvider(getApplication(), lpSettings);
 ```
 
-### IndoorAtlas location provider<a id='3.0.0-ia-navigation'></a>
+### IndoorAtlas location provider<a id='3.0.3-ia-navigation'></a>
 
 Setup:
 
@@ -307,7 +311,7 @@ repositories {
 
 ```java
 dependencies {
-    implementation 'com.expofp:indooratlas:3.0.0'
+    implementation 'com.expofp:indooratlas:3.0.3'
     implementation "com.indooratlas.android:indooratlas-android-sdk:3.5.5@aar"
     
     ... 
