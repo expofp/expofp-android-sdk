@@ -104,7 +104,7 @@ Init FplanView:
 //noOverlay - Hides the panel with information about exhibitors
 Settings settings = new Settings("https://demo.expofp.com", false)
                 //.withLocationProvider(new CrowdConnectedProvider(getApplication(), new com.expofp.crowdconnected.Settings("APP_KEY","TOKEN","SECRET")))
-                //.withLocationProvider(new com.expofp.indooratlas.IndoorAtlasProvider(getApplication(), "API_KEY", "API_SECRET_KEY"))
+                //.withLocationProvider(new IndoorAtlasProvider(getApplication(), "API_KEY", "API_SECRET_KEY"))
                 //.withGlobalLocationProvider()
                 .withEventsListener(new FplanEventsListener() {
                     @Override
